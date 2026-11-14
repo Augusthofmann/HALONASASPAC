@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" uid="uid://cqrvaktmqg3fr" path="res://assets/kaykit/space-base/gltf/solarpanel.gltf" id="8_solar"]
 [ext_resource type="PackedScene" uid="uid://cbw4kgdosrmnn" path="res://assets/kaykit/space-base/gltf/lights.gltf" id="9_lights"]
 [ext_resource type="PackedScene" uid="uid://ds7l6v0pnbd8m" path="res://assets/kaykit/space-base/gltf/spacetruck.gltf" id="14_rover"]
+[ext_resource type="PackedScene" path="res://scenes/characters/astronaut.tscn" id="15_astronaut"]
 
 [sub_resource type="StandardMaterial3D" id="PathMaterial"]
 albedo_color = Color(0.19, 0.23, 0.29, 1)
@@ -132,6 +133,26 @@ mesh = SubResource("PathLandingMesh")
 
 [node name="Rover" parent="." unique_id=547067083 instance=ExtResource("14_rover")]
 transform = Transform3D(2.9267554, 0, -2.726555, 0, 4, 0, 2.726555, 0, 2.9267554, -12.295633, -0.47050658, 0.44669962)
+
+[node name="Astronaut" parent="." instance=ExtResource("15_astronaut")]
+position = Vector3(-3.2, 0.02, 1.25)
+rotation = Vector3(0, 0.7, 0)
+scale = Vector3(0.55, 0.55, 0.55)
+
+[node name="AstronautHome" type="Marker3D" parent="."]
+position = Vector3(-3.8, 0.02, 1.1)
+
+[node name="TaskPoint_Science" type="Marker3D" parent="."]
+position = Vector3(3.4, 0.2, -1.6)
+
+[node name="TaskPoint_Hydroponics" type="Marker3D" parent="."]
+position = Vector3(-7.1, -0.38, -2.2)
+
+[node name="TaskPoint_Solar" type="Marker3D" parent="."]
+position = Vector3(-5.2, 0.4, 0.8)
+
+[node name="TaskPoint_Rover" type="Marker3D" parent="."]
+position = Vector3(-11.0, -0.42, 0.7)
 
 [node name="TerrainDetails" type="Node3D" parent="." unique_id=1944668426]
 
