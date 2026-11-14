@@ -42,7 +42,7 @@ corner_radius_bottom_left = 8
 transform = Transform3D(0.7071068, -0.4086071, 0.5770964, 0, 0.81613773, 0.5778576, -0.7071068, -0.4086071, 0.5770964, 21.73, 28.36, 27.01)
 projection = 1
 current = true
-size = 38.0
+size = 30.0
 
 [node name="Sun" type="DirectionalLight3D" parent="." unique_id=962096258]
 transform = Transform3D(0.8660254, 0.35355338, -0.35355338, 0, 0.70710677, 0.70710677, 0.5, -0.6123724, 0.6123724, 0, 0, 0)
