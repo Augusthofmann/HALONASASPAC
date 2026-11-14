@@ -1,0 +1,6 @@
+newmtl lunar_regolith
+Kd 1.000 1.000 1.000
+Ks 0.000 0.000 0.000
+Ns 4.000
+illum 2
+map_Kd site20v2_regolith_albedo.png
