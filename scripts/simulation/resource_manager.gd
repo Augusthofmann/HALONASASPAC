@@ -16,6 +16,7 @@ signal crew_survival_changed(surviving: bool)
 
 @export_group("Rates per game hour")
 @export var solar_generation_kw: float = 1.0
+@export var solar_enabled: bool = true
 @export var habitat_consumption_kw: float = 0.25
 @export var life_support_consumption_kw: float = 0.5
 @export var oxygen_production_kg_per_hour: float = 0.30
@@ -31,7 +32,7 @@ func advance_minutes(minutes: float) -> void:
 	if minutes <= 0.0:
 		return
 	var hours: float = minutes / 60.0
-	var generated: float = maxf(0.0, solar_generation_kw) * hours
+	var generated: float = maxf(0.0, solar_generation_kw) * hours if solar_enabled else 0.0
 	var habitat_demand: float = maxf(0.0, habitat_consumption_kw) * hours
 	var support_demand: float = maxf(0.0, life_support_consumption_kw) * hours
 	var available: float = minf(energy_capacity_kwh, energy_kwh + generated)
