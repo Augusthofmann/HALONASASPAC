@@ -17,12 +17,18 @@ signal crew_survival_changed(surviving: bool)
 @export_group("Rates per game hour")
 @export var solar_generation_kw: float = 1.0
 @export var solar_enabled: bool = true
+@export_range(0.0, 1.0) var equipment_condition: float = 0.65
 @export var habitat_consumption_kw: float = 0.25
 @export var life_support_consumption_kw: float = 0.5
-@export var oxygen_production_kg_per_hour: float = 0.30
-@export var oxygen_use_kg_per_hour: float = 0.20
+@export var oxygen_production_kg_per_hour: float = 0.03
+@export var oxygen_use_kg_per_hour: float = 0.02
 @export var water_use_kg_per_hour: float = 0.05
 @export var food_use_kg_per_hour: float = 0.03
+## Simplified, fictional rates for the prototype, not NASA measurements.
+@export var water_per_oxygen_kg: float = 1.125
+@export_range(0.0, 1.0) var water_recycling_fraction: float = 0.75
+var water_leak_kg_per_hour: float = 0.0
+var oxygen_leak_kg_per_hour: float = 0.0
 
 var life_support_powered: bool = true
 var crew_surviving: bool = true
@@ -32,14 +38,15 @@ func advance_minutes(minutes: float) -> void:
 	if minutes <= 0.0:
 		return
 	var hours: float = minutes / 60.0
-	var generated: float = maxf(0.0, solar_generation_kw) * hours if solar_enabled else 0.0
+	var generated: float = maxf(0.0, solar_generation_kw) * equipment_condition * hours if solar_enabled else 0.0
 	var habitat_demand: float = maxf(0.0, habitat_consumption_kw) * hours
 	var support_demand: float = maxf(0.0, life_support_consumption_kw) * hours
-	var available: float = minf(energy_capacity_kwh, energy_kwh + generated)
+	# Generation can power consumers directly even when the battery starts full.
+	var available: float = maxf(0.0, energy_kwh) + generated
 	var habitat_powered: bool = available >= habitat_demand
 	if habitat_powered:
 		available -= habitat_demand
-	var support_powered: bool = available >= support_demand
+	var support_powered: bool = habitat_powered and available >= support_demand
 	if support_powered:
 		available -= support_demand
 	energy_kwh = clampf(available, 0.0, energy_capacity_kwh)
@@ -47,9 +54,15 @@ func advance_minutes(minutes: float) -> void:
 		life_support_powered = support_powered
 		life_support_changed.emit(support_powered)
 	if support_powered:
-		oxygen_kg = minf(oxygen_capacity_kg, oxygen_kg + oxygen_production_kg_per_hour * hours)
-	oxygen_kg = maxf(0.0, oxygen_kg - oxygen_use_kg_per_hour * hours)
-	water_kg = maxf(0.0, water_kg - water_use_kg_per_hour * hours)
+		var oxygen_made: float = minf(maxf(0.0, oxygen_capacity_kg - oxygen_kg), maxf(0.0, oxygen_production_kg_per_hour) * hours)
+		if water_per_oxygen_kg > 0.0:
+			oxygen_made = minf(oxygen_made, water_kg / water_per_oxygen_kg)
+			water_kg = maxf(0.0, water_kg - oxygen_made * water_per_oxygen_kg)
+		oxygen_kg += oxygen_made
+	oxygen_kg = maxf(0.0, oxygen_kg - (oxygen_use_kg_per_hour + oxygen_leak_kg_per_hour) * hours)
+	# Recycling returns part of crew water use while powered; leaks are never recycled.
+	var recycled: float = clampf(water_recycling_fraction, 0.0, 1.0) if support_powered else 0.0
+	water_kg = maxf(0.0, water_kg - (water_use_kg_per_hour * (1.0 - recycled) + water_leak_kg_per_hour) * hours)
 	food_kg = maxf(0.0, food_kg - food_use_kg_per_hour * hours)
 	var surviving: bool = habitat_powered and oxygen_kg > 0.0 and water_kg > 0.0 and food_kg > 0.0
 	if crew_surviving != surviving:
