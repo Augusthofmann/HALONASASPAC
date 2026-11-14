@@ -1,3 +1,227 @@
 [gd_scene format=3 uid="uid://crgjir11hlpxe"]
 
+[ext_resource type="PackedScene" uid="uid://clgxspdebs68a" path="res://assets/kaykit/space-base/gltf/basemodule_C.gltf" id="1_command"]
+[ext_resource type="PackedScene" uid="uid://da2v31s5ur0ul" path="res://assets/kaykit/space-base/gltf/basemodule_A.gltf" id="2_habitat"]
+[ext_resource type="PackedScene" uid="uid://bpaexteme3ep8" path="res://assets/kaykit/space-base/gltf/eco_module.gltf" id="3_dome"]
+[ext_resource type="PackedScene" uid="uid://cw6jmmxov583i" path="res://assets/kaykit/space-base/gltf/space_farm_large.gltf" id="4_farm"]
+[ext_resource type="PackedScene" uid="uid://bp4r4kal058ds" path="res://assets/kaykit/space-base/gltf/water_storage.gltf" id="5_water"]
+[ext_resource type="PackedScene" uid="uid://bnc537t73wevw" path="res://assets/kaykit/space-base/gltf/cargodepot_A.gltf" id="6_cargo"]
+[ext_resource type="PackedScene" uid="uid://dw2vk2d5dmslv" path="res://assets/kaykit/space-base/gltf/landingpad_small.gltf" id="7_pad"]
+[ext_resource type="PackedScene" uid="uid://cqrvaktmqg3fr" path="res://assets/kaykit/space-base/gltf/solarpanel.gltf" id="8_solar"]
+[ext_resource type="PackedScene" uid="uid://cbw4kgdosrmnn" path="res://assets/kaykit/space-base/gltf/lights.gltf" id="9_lights"]
+[ext_resource type="PackedScene" uid="uid://ds7l6v0pnbd8m" path="res://assets/kaykit/space-base/gltf/spacetruck.gltf" id="14_rover"]
+
+[sub_resource type="StandardMaterial3D" id="PathMaterial"]
+albedo_color = Color(0.19, 0.23, 0.29, 1)
+metallic = 0.15
+roughness = 0.82
+emission_enabled = true
+emission = Color(0.012, 0.022, 0.04, 1)
+
+[sub_resource type="BoxMesh" id="PathCrewMesh"]
+material = SubResource("PathMaterial")
+size = Vector3(0.72, 0.05, 4.8)
+
+[sub_resource type="BoxMesh" id="PathScienceMesh"]
+material = SubResource("PathMaterial")
+size = Vector3(0.72, 0.05, 4.5)
+
+[sub_resource type="BoxMesh" id="PathFarmMesh"]
+material = SubResource("PathMaterial")
+size = Vector3(0.72, 0.05, 9.1)
+
+[sub_resource type="BoxMesh" id="PathLandingMesh"]
+material = SubResource("PathMaterial")
+size = Vector3(0.86, 0.05, 5.0410156)
+
+[sub_resource type="StandardMaterial3D" id="GreyRockMaterial"]
+albedo_color = Color(0.42, 0.425, 0.44, 1)
+roughness = 0.94
+
+[sub_resource type="SphereMesh" id="GreyRockMesh"]
+material = SubResource("GreyRockMaterial")
+radius = 0.75
+height = 1.1
+radial_segments = 7
+rings = 4
+
+[sub_resource type="StandardMaterial3D" id="FlagMaterial"]
+albedo_color = Color(0.08, 0.82, 0.95, 1)
+metallic = 0.35
+roughness = 0.42
+emission_enabled = true
+emission = Color(0.005, 0.08, 0.13, 1)
+
+[sub_resource type="CylinderMesh" id="FlagPoleMesh"]
+material = SubResource("FlagMaterial")
+top_radius = 0.035
+bottom_radius = 0.045
+height = 1.7
+radial_segments = 8
+
+[sub_resource type="QuadMesh" id="FlagMesh"]
+material = SubResource("FlagMaterial")
+size = Vector2(0.7, 0.42)
+
 [node name="LunarBase" type="Node3D" unique_id=1802121264]
+
+[node name="CommandCenter" parent="." unique_id=1808873304 instance=ExtResource("1_command")]
+transform = Transform3D(2.5, 0, 0, 0, 2.5, 0, 0, 0, 2.5, 0, -0.03, 0)
+
+[node name="CrewHabitat" parent="." unique_id=1647826315 instance=ExtResource("2_habitat")]
+transform = Transform3D(-7.2399803e-06, 0, 2, 0, 2, 0, -2, 0, -7.2399803e-06, -4.8, -0.37, 0.3)
+
+[node name="ScienceDome" parent="." unique_id=732829028 instance=ExtResource("3_dome")]
+transform = Transform3D(2.1, 0, 0, 0, 2.1, 0, 0, 0, 2.1, 4.4, 0.28, -0.9)
+
+[node name="HydroponicsFarm" parent="." unique_id=376495176 instance=ExtResource("4_farm")]
+transform = Transform3D(1.6908709, 0, -0.61721605, 0, 1.8, 0, 0.61721605, 0, 1.6908709, -8.514109, -0.41166735, -3.154541)
+
+[node name="WaterStorage" parent="." unique_id=940334650 instance=ExtResource("5_water")]
+transform = Transform3D(1.3151218, 0, 0.4800569, 0, 1.4, 0, -0.4800569, 0, 1.3151218, 0.5096276, 2.2582104, 0.59285164)
+
+[node name="CargoDepot" parent="." unique_id=1076492446 instance=ExtResource("6_cargo")]
+transform = Transform3D(0.7205952, 0, -1.0820087, 0, 1.3, 0, 1.0820087, 0, 0.7205952, 3.6558447, 0.06, 3.26392)
+
+[node name="LandingPad" parent="." unique_id=603055312 instance=ExtResource("7_pad")]
+transform = Transform3D(2.9401999, 0, 0.596008, 0, 3, 0, -0.596008, 0, 2.9401999, 10.126942, -0.14, -0.06304312)
+
+[node name="HydroponicsFarm2" parent="." unique_id=986254305 instance=ExtResource("4_farm")]
+transform = Transform3D(-5.3731422, 4.6973497e-07, -0.5379119, -4.720834e-07, -5.4000044, 0, -0.53791165, 4.7025807e-08, 5.37314, -9.049213, -0.43378973, 0.2381506)
+
+[node name="HydroponicsFarm" parent="HydroponicsFarm2" unique_id=1860947411 instance=ExtResource("4_farm")]
+transform = Transform3D(0.6, -1.1175871e-08, 7.327472e-15, -1.0547119e-15, -2.6226836e-08, 0.60000014, -3.7252903e-09, -0.6, -2.622684e-08, -0.096868515, 0.6077579, 0.97685057)
+
+[node name="HydroponicsFarm" parent="HydroponicsFarm2/HydroponicsFarm" unique_id=2007064137 instance=ExtResource("4_farm")]
+transform = Transform3D(0.78493136, 0.619583, -4.511114e-09, -0.6195829, 0.7849313, -1.0521196e-08, -2.9776945e-09, 1.1053391e-08, 1, -0.90024436, 0.26557946, -0.03525901)
+
+[node name="SolarArrayWest" parent="." unique_id=507218813 instance=ExtResource("8_solar")]
+transform = Transform3D(2.1734152, 0, 2.0679135, 0, 3.0000005, 0, -2.0679135, 0, 2.1734152, -4.2338686, 1.4337435, 0.14706993)
+
+[node name="SolarArrayEast" parent="." unique_id=1342622686 instance=ExtResource("8_solar")]
+transform = Transform3D(2.7738104, 0, 1.1427932, 0, 3, 0, -1.1427932, 0, 2.7738104, -11.390316, -0.4930006, 3.726366)
+
+[node name="SolarArraySouth" parent="." unique_id=894585587 instance=ExtResource("8_solar")]
+transform = Transform3D(2.5710492, 0, 1.5458676, 0, 3, 0, -1.5458676, 0, 2.5710492, -9.022534, -0.5399047, 1.7720599)
+
+[node name="ServicePaths" type="Node3D" parent="." unique_id=2019038915]
+
+[node name="Path_CommandToCrew" type="MeshInstance3D" parent="ServicePaths" unique_id=203180975]
+transform = Transform3D(0.062355883, 0, -0.99805397, 0, 1, 0, 0.99805397, 0, 0.062355883, -2.4, -0.15, 0.15)
+mesh = SubResource("PathCrewMesh")
+
+[node name="Path_CommandToScience" type="MeshInstance3D" parent="ServicePaths" unique_id=4186293]
+transform = Transform3D(-0.2003388, 0, 0.9797267, 0, 1, 0, -0.9797267, 0, -0.2003388, 2.2, 0.18, -0.45)
+mesh = SubResource("PathScienceMesh")
+
+[node name="Path_CommandToFarm" type="MeshInstance3D" parent="ServicePaths" unique_id=113579866]
+transform = Transform3D(-0.34740633, 0, -0.9377147, 0, 1, 0, 0.9377147, 0, -0.34740633, -4.26, -0.22, -1.58)
+mesh = SubResource("PathFarmMesh")
+
+[node name="Path_CargoToLanding3" type="MeshInstance3D" parent="ServicePaths" unique_id=675531102]
+transform = Transform3D(-0.417236, 0, -0.9087989, 0, 1, 0, 0.9087989, 0, -0.417236, -2.8249068, -0.04, 2.054048)
+mesh = SubResource("PathLandingMesh")
+
+[node name="Path_CargoToLanding2" type="MeshInstance3D" parent="ServicePaths" unique_id=252108812]
+transform = Transform3D(-0.37205425, 0, -0.92821133, 0, 1, 0, 0.92821133, 0, -0.37205425, 0.94429207, -0.02, 3.674234)
+mesh = SubResource("PathLandingMesh")
+
+[node name="Path_CargoToLanding" type="MeshInstance3D" parent="ServicePaths" unique_id=953402100]
+transform = Transform3D(-0.4355131, -0.30409643, 0.8472625, -0.13902186, 0.9526411, 0.27045798, -0.8893824, -2.8316617e-08, -0.4571637, 5.8770223, 0.4057393, 2.2597213)
+mesh = SubResource("PathLandingMesh")
+
+[node name="Rover" parent="." unique_id=547067083 instance=ExtResource("14_rover")]
+transform = Transform3D(2.9267554, 0, -2.726555, 0, 4, 0, 2.726555, 0, 2.9267554, -12.295633, -0.47050658, 0.44669962)
+
+[node name="TerrainDetails" type="Node3D" parent="." unique_id=1944668426]
+
+[node name="RockClusterWest" type="MeshInstance3D" parent="TerrainDetails" unique_id=1708323870]
+transform = Transform3D(0.80809295, 0, 1.018325, 0, 1.3, 0, -1.018325, 0, 0.80809295, -10.5, -0.55, -2.5)
+mesh = SubResource("GreyRockMesh")
+
+[node name="RockClusterEast" type="MeshInstance3D" parent="TerrainDetails" unique_id=457603870]
+transform = Transform3D(1.0530992, 0, -0.5753107, 0, 1.2, 0, 0.5753107, 0, 1.0530992, 10.8, -0.1, 2.4)
+mesh = SubResource("GreyRockMesh")
+
+[node name="RockNorth" type="MeshInstance3D" parent="TerrainDetails" unique_id=701935535]
+transform = Transform3D(0.23795402, 0, 1.3796296, 0, 1.4, 0, -1.3796296, 0, 0.23795402, 0.2, 0.05, -7.5)
+mesh = SubResource("GreyRockMesh")
+
+[node name="RockSouth" type="MeshInstance3D" parent="TerrainDetails" unique_id=1495413879]
+transform = Transform3D(0.932415, 0, -1.1749904, 0, 1.5, 0, 1.1749904, 0, 0.932415, -1.5, -1.850691, 7.8)
+mesh = SubResource("GreyRockMesh")
+
+[node name="RockNearRover" type="MeshInstance3D" parent="TerrainDetails" unique_id=816081732]
+transform = Transform3D(0.63704324, 0, 0.12913506, 0, 0.65, 0, -0.12913506, 0, 0.63704324, -7.7, -0.18, 2.9)
+mesh = SubResource("GreyRockMesh")
+
+[node name="Flags" type="Node3D" parent="." unique_id=1144389541]
+
+[node name="ScienceFlag" type="Node3D" parent="Flags" unique_id=964161593]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.8, 0.1, -2.5)
+
+[node name="Pole" type="MeshInstance3D" parent="Flags/ScienceFlag" unique_id=127502140]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
+mesh = SubResource("FlagPoleMesh")
+
+[node name="Banner" type="MeshInstance3D" parent="Flags/ScienceFlag" unique_id=1289457354]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.34, 1.45, 0.02)
+mesh = SubResource("FlagMesh")
+
+[node name="LandingFlag" type="Node3D" parent="Flags" unique_id=2111831722]
+transform = Transform3D(0.3623577, 0, 0.9320391, 0, 1, 0, -0.9320391, 0, 0.3623577, 12.3, -0.05, -2.5)
+
+[node name="Pole" type="MeshInstance3D" parent="Flags/LandingFlag" unique_id=531449893]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
+mesh = SubResource("FlagPoleMesh")
+
+[node name="Banner" type="MeshInstance3D" parent="Flags/LandingFlag" unique_id=1376424835]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.34, 1.45, 0.02)
+mesh = SubResource("FlagMesh")
+
+[node name="BeaconLandingWest" type="Node3D" parent="." unique_id=714611064]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.6, 0.05, -1.25)
+
+[node name="Fixture" parent="BeaconLandingWest" unique_id=1950162567 instance=ExtResource("9_lights")]
+transform = Transform3D(0.7, 0, 0, 0, 0.7, 0, 0, 0, 0.7, 0, 0, 0)
+
+[node name="Glow" type="OmniLight3D" parent="BeaconLandingWest" unique_id=1178375642]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
+light_color = Color(1, 0.36, 0.08, 1)
+light_energy = 1.6
+shadow_enabled = true
+omni_range = 3.2
+
+[node name="BeaconLandingEast" type="Node3D" parent="." unique_id=528257224]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.2, 0.05, 1.15)
+
+[node name="Fixture" parent="BeaconLandingEast" unique_id=558937302 instance=ExtResource("9_lights")]
+transform = Transform3D(0.7, 0, 0, 0, 0.7, 0, 0, 0, 0.7, 0, 0, 0)
+
+[node name="Glow" type="OmniLight3D" parent="BeaconLandingEast" unique_id=1273900481]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
+light_color = Color(1, 0.36, 0.08, 1)
+light_energy = 1.6
+shadow_enabled = true
+omni_range = 3.2
+
+[node name="BeaconCrossroads" type="Node3D" parent="." unique_id=1328346798]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.7, -0.05, 1.8)
+
+[node name="Fixture" parent="BeaconCrossroads" unique_id=473457978 instance=ExtResource("9_lights")]
+transform = Transform3D(0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, 0, 0, 0)
+
+[node name="Glow" type="OmniLight3D" parent="BeaconCrossroads" unique_id=562867719]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.48, 0)
+light_color = Color(0.12, 0.75, 1, 1)
+light_energy = 1.15
+omni_range = 2.4
+
+[node name="PowerZone" type="Marker3D" parent="." unique_id=990283765]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, -0.2, -3.6)
+
+[node name="LifeSupportZone" type="Marker3D" parent="." unique_id=1231975121]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.2, -0.5, 2.5)
+
+[node name="LogisticsZone" type="Marker3D" parent="." unique_id=1082878801]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, -0.9)

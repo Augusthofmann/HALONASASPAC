@@ -1,3 +1,158 @@
 [gd_scene format=3 uid="uid://h0ls36sf0usc"]
 
+[ext_resource type="ArrayMesh" uid="uid://bned148ht7ejy" path="res://assets/terrain/site20v2_leibnitz_beta_terrain.obj" id="1_terrain"]
+[ext_resource type="ArrayMesh" uid="uid://ci2jcltk10mwm" path="res://assets/terrain/starry_scatter_rocks.obj" id="2_scatter_rocks"]
+
+[sub_resource type="StandardMaterial3D" id="WorldRockMaterial"]
+albedo_color = Color(0.42, 0.425, 0.44, 1)
+roughness = 0.94
+
+[sub_resource type="SphereMesh" id="WorldRockMesh"]
+material = SubResource("WorldRockMaterial")
+radius = 0.75
+height = 1.1
+radial_segments = 7
+rings = 4
+
 [node name="LunarWorld" type="Node3D" unique_id=729673042]
+
+[node name="LeibnitzBetaTerrain" type="MeshInstance3D" parent="." unique_id=1121539727]
+transform = Transform3D(1.08, 0, 0, 0, 1.08, 0, 0, 0, 1.08, 0, 0, 0)
+mesh = ExtResource("1_terrain")
+
+[node name="BasePlateau" type="Marker3D" parent="." unique_id=682481229]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.25, 2.49, 1.03)
+
+[node name="StarryNoiseRockField" type="Node3D" parent="." unique_id=1402866203]
+
+[node name="InstancedMoonRocks" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=1330981048]
+material_override = SubResource("WorldRockMaterial")
+mesh = ExtResource("2_scatter_rocks")
+
+[node name="ScatterRock01" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=887932921]
+transform = Transform3D(-0.20692411, 0, 0.6477518, 0, 0.68, 0, -0.6477518, 0, -0.20692411, -23.44, -8.46, 26.34)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock02" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=119526631]
+transform = Transform3D(0.040910807, 0, -0.3677313, 0, 0.37, 0, 0.3677313, 0, 0.040910807, 7.46, -4.01, 35.6)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock03" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=2086232866]
+transform = Transform3D(0.6421862, 0, 0.36769128, 0, 0.74, 0, -0.36769128, 0, 0.6421862, -18.25, 0.09, -22.76)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock04" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=2022634414]
+transform = Transform3D(-0.16671348, 0, -0.975862, 0, 0.99, 0, 0.975862, 0, -0.16671348, -37.71, -1.13, -4.05)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock05" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=357101589]
+transform = Transform3D(-0.7779336, 0, -0.6441423, 0, 1.01, 0, 0.6441423, 0, -0.7779336, 5.93, -4.4, 35.42)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock06" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=1159687250]
+transform = Transform3D(-0.6062058, 0, 0.06793035, 0, 0.61, 0, -0.06793035, 0, -0.6062058, 24.98, 1.13, 35.11)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock07" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=1255890043]
+transform = Transform3D(0.31047267, 0, 0.23602268, 0, 0.39, 0, -0.23602268, 0, 0.31047267, -37.68, -12.3, 37.44)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock08" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=839433262]
+transform = Transform3D(0.14868295, 0, -1.1302625, 0, 1.14, 0, 1.1302625, 0, 0.14868295, 13.49, 1.31, 7.08)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock09" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=1019197730]
+transform = Transform3D(0.021208221, 0, -0.5195673, 0, 0.52, 0, 0.5195673, 0, 0.021208221, -23.69, -7.75, 23.85)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock10" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=1654760250]
+transform = Transform3D(-0.14712434, 0, 0.40404755, 0, 0.43, 0, -0.40404755, 0, -0.14712434, -36.94, -6.03, 14.62)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock11" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=1459351497]
+transform = Transform3D(0.48830256, 0, -0.31298655, 0, 0.58, 0, 0.31298655, 0, 0.48830256, -32.26, -11.12, 34.71)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock12" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=1072963273]
+transform = Transform3D(0.7528164, 0, -0.49322152, 0, 0.9, 0, 0.49322152, 0, 0.7528164, 21.92, 0.28, -2.02)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock13" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=1791094227]
+transform = Transform3D(0.20897985, 0, -0.36431772, 0, 0.42, 0, 0.36431772, 0, 0.20897985, -24.73, 0.08, -19)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock14" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=1132363564]
+transform = Transform3D(0.61594456, 0, -0.95927685, 0, 1.14, 0, 0.95927685, 0, 0.61594456, -9.82, 0.42, -22.51)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock15" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=1301083689]
+transform = Transform3D(0.5287494, 0, -0.42757925, 0, 0.68, 0, 0.42757925, 0, 0.5287494, -21.68, -7.87, 25.49)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock16" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=1478766373]
+transform = Transform3D(-0.35197118, 0, 0.075606205, 0, 0.36, 0, -0.075606205, 0, -0.35197118, -26.82, -10.83, 35.33)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock17" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=1293777539]
+transform = Transform3D(0.15265426, 0, 0.4445185, 0, 0.47, 0, -0.4445185, 0, 0.15265426, 34.22, 2.5, -9.07)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock18" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=1029567618]
+transform = Transform3D(0.2677058, 0, 0.44579545, 0, 0.52, 0, -0.44579545, 0, 0.2677058, 19.83, 0.75, 4.22)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock19" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=890660099]
+transform = Transform3D(-0.51972073, 0, -0.20854348, 0, 0.56, 0, 0.20854348, 0, -0.51972073, 21.33, 0.02, 37.4)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock20" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=2128009905]
+transform = Transform3D(-0.5989072, 0, -0.16034393, 0, 0.62, 0, 0.16034393, 0, -0.5989072, -35.6, -8.81, 22.08)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock21" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=2001336349]
+transform = Transform3D(-0.33927634, 0, -0.26418093, 0, 0.43, 0, 0.26418093, 0, -0.33927634, 37.17, 2.95, -20.91)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock22" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=1914803484]
+transform = Transform3D(0.46244794, 0, 0.9315266, 0, 1.04, 0, -0.9315266, 0, 0.46244794, 25.04, 0.61, -31.25)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock23" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=993554475]
+transform = Transform3D(-0.7859865, 0, 0.81186527, 0, 1.13, 0, -0.81186527, 0, -0.7859865, 34.85, 2.72, 15.68)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock24" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=1469413198]
+transform = Transform3D(-0.83888227, 0, 0.043318674, 0, 0.84, 0, -0.043318674, 0, -0.83888227, 11.74, 2.09, -16.45)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock25" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=2071514279]
+transform = Transform3D(-0.04278993, 0, -0.8689471, 0, 0.87, 0, 0.8689471, 0, -0.04278993, -6.73, 1.16, -17.13)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock26" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=888434831]
+transform = Transform3D(-1.0980942, 0, -0.34159765, 0, 1.15, 0, 0.34159765, 0, -1.0980942, -32.59, 0.23, -21.8)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock27" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=1380983989]
+transform = Transform3D(-0.44464177, 0, 0.48774353, 0, 0.66, 0, -0.48774353, 0, -0.44464177, 22.16, 1.35, -15.92)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock28" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=545200714]
+transform = Transform3D(0.6899655, 0, 0.006899885, 0, 0.69, 0, -0.006899885, 0, 0.6899655, 38.94, 2.21, -31.7)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock29" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=1090909499]
+transform = Transform3D(-0.23126812, 0, -0.7239579, 0, 0.76, 0, 0.7239579, 0, -0.23126812, 15.31, 0.61, -25.81)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock30" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=710110237]
+transform = Transform3D(-0.03490976, 0, -0.5889663, 0, 0.59, 0, 0.5889663, 0, -0.03490976, 30.26, 1.15, 25.43)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock31" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=1685204780]
+transform = Transform3D(0.39051864, 0, 0.22359605, 0, 0.45, 0, -0.22359605, 0, 0.39051864, 22.16, 0.7, 33.28)
+mesh = SubResource("WorldRockMesh")
+
+[node name="ScatterRock32" type="MeshInstance3D" parent="StarryNoiseRockField" unique_id=1911318721]
+transform = Transform3D(0.49181512, 0, 0.440134, 0, 0.66, 0, -0.440134, 0, 0.49181512, 16.38, 0.84, 4.07)
+mesh = SubResource("WorldRockMesh")
