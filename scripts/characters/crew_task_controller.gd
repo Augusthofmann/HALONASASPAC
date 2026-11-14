@@ -8,9 +8,8 @@ signal task_finished(task: String)
 @export var simulation: Node
 @export var movement_speed: float = 1.8
 @export var cleaning_seconds: float = 4.0
-## Offsets place the route in front of the base while retaining the scene's markers.
-@export var home_visible_offset: Vector3 = Vector3(1.0, 0.0, 5.0)
-@export var solar_visible_offset: Vector3 = Vector3(-3.0, -0.4, 5.0)
+@export_range(0.05, 1.0, 0.01) var ground_clearance: float = 0.38
+@export var solar_visible_offset: Vector3 = Vector3(0.0, 0.0, -2.2)
 var crew_index: int = 0
 
 var state: String = "idle"
@@ -23,11 +22,16 @@ var _animation: AnimationPlayer
 var _ground_y: float
 var _route: Array[Vector3] = []
 var _inside: bool = true
+var _return_route: Array[Vector3] = []
+var _display_scale: Vector3 = Vector3.ONE
+var _task_height_offset: float = 0.0
 
 
 func _ready() -> void:
 	_astronaut = get_parent() as Node3D
+	_display_scale = _astronaut.scale
 	_animation = _astronaut.get_node_or_null("Model/AnimationPlayer")
+	_configure_movement_animations()
 	var home: Node3D = base.get_node_or_null("AstronautHome")
 	if home != null:
 		_ground_y = home.global_position.y
@@ -42,16 +46,48 @@ func _ready() -> void:
 
 
 func start_task(task: String) -> bool:
-	if task not in ["clean_solar", "collect_food", "collect_water", "repair"] or state != "idle" or simulation.radiation_level >= 50.0 or clock.paused or clock.campaign_complete:
+	if task not in ["clean_solar", "solar_maintenance", "collect_food", "collect_water", "collect_oxygen", "repair", "repair_science"] or state != "idle" or simulation.radiation_level >= 50.0 or clock.paused or clock.campaign_complete:
 		return false
-	var point_name: String = "TaskPoint_Hydroponics" if task in ["collect_food", "collect_water"] else ("TaskPoint_Science" if task == "repair" else "TaskPoint_Solar")
-	var point: Node3D = base.get_node_or_null(point_name)
+	var point: Node3D = _task_anchor(task)
 	if point == null:
 		return false
 	current_task = task
-	var offset: Vector3 = solar_visible_offset if task == "clean_solar" else Vector3(0.0, 0.0, 4.0)
-	_start_outside_route(point.global_position + base.global_basis * offset, "work")
+	_spawn_for_task(point)
+	_work_remaining = cleaning_seconds
+	_set_state("working")
 	return true
+
+
+func _task_anchor(task: String) -> Node3D:
+	if task in ["clean_solar", "solar_maintenance", "repair"]:
+		return base.get_node_or_null("SolarArraySouth")
+	if task == "collect_water":
+		return base.get_node_or_null("WaterStorage")
+	if task == "collect_oxygen":
+		return base.get_node_or_null("CargoDepot")
+	if task == "repair_science":
+		return base.get_node_or_null("ScienceDome")
+	return base.get_node_or_null("HydroponicsFarm")
+
+
+func _spawn_for_task(anchor: Node3D) -> void:
+	var offset: Vector3 = anchor.global_basis.z.normalized() * 1.6
+	# The south array sits slightly above the regolith. Lift the worker so the
+	# suit reads as standing beside the panel rather than clipping into its base.
+	_task_height_offset = 0.55 if String(anchor.name) == "SolarArraySouth" else 0.0
+	_astronaut.global_position = _grounded_position(anchor.global_position + offset)
+	_astronaut.scale = Vector3.ONE * 0.01
+	_astronaut.visible = true
+	_inside = false
+	var face_target: Vector3 = anchor.global_position - _astronaut.global_position
+	face_target.y = 0.0
+	if face_target.length_squared() > 0.001:
+		_astronaut.rotation.y = atan2(face_target.x, face_target.z)
+	var arrival := create_tween()
+	arrival.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	arrival.tween_property(_astronaut, "scale", _display_scale, 0.45)
+	arrival.parallel().tween_property(_astronaut, "position:y", _astronaut.position.y + 0.18, 0.18)
+	arrival.tween_property(_astronaut, "position:y", _astronaut.position.y, 0.27)
 
 
 func start_expedition() -> bool:
@@ -61,7 +97,8 @@ func start_expedition() -> bool:
 	if rover_point == null:
 		return false
 	current_task = "rover"
-	_start_outside_route(rover_point.global_position + base.global_basis * Vector3(0.0, 0.0, 2.0), "rover")
+	var rover_work: Vector3 = rover_point.global_position + base.global_basis * Vector3(0.0, 0.0, 2.0)
+	_start_outside_route(rover_work, "rover", ["RouteHub", "RouteRover"])
 	return true
 
 
@@ -76,7 +113,9 @@ func finish_expedition() -> void:
 
 func _process(delta: float) -> void:
 	if clock.paused or clock.campaign_complete:
+		_set_animation_paused(true)
 		return
+	_set_animation_paused(false)
 	var scaled_delta: float = delta * clock.speed
 	if state == "walking":
 		var distance_left: float = movement_speed * scaled_delta
@@ -97,10 +136,16 @@ func _process(delta: float) -> void:
 		_work_remaining -= scaled_delta
 		if _work_remaining <= 0.0:
 			match current_task:
-				"clean_solar": simulation.clean_solar()
+				"clean_solar", "solar_maintenance":
+					simulation.clean_solar()
+					simulation.repair_equipment()
 				"collect_food": simulation.resources.food_kg += 1.0
-				"collect_water": simulation.resources.water_kg += 1.0
+				"collect_water": simulation.resources.refill_water()
+				"collect_oxygen": simulation.resources.oxygen_kg = simulation.resources.oxygen_capacity_kg
 				"repair": simulation.repair_equipment()
+				"repair_science":
+					simulation.repair_equipment()
+					simulation.research += 10.0
 			task_finished.emit(current_task)
 			current_task = ""
 			_go_home()
@@ -110,20 +155,23 @@ func _process(delta: float) -> void:
 func _snap_to_ground() -> void:
 	if not _astronaut.is_inside_tree() or not _astronaut.visible:
 		return
-	var position: Vector3 = _astronaut.global_position
+	var position: Vector3 = _grounded_position(_astronaut.global_position)
+	if not is_equal_approx(position.y, _astronaut.global_position.y):
+		_astronaut.global_position = position
+
+
+func _grounded_position(position: Vector3) -> Vector3:
+	if not _astronaut.is_inside_tree():
+		return position
 	var query := PhysicsRayQueryParameters3D.create(position + Vector3.UP * 50.0, position - Vector3.UP * 50.0, 1 << 19)
 	var hit: Dictionary = _astronaut.get_world_3d().direct_space_state.intersect_ray(query)
 	if not hit.is_empty():
-		var floor_height: float = hit.position.y + 0.02
-		var habitat: Node3D = base.get_node_or_null("CrewHabitat")
-		if habitat != null:
-			var hatch: Vector3 = _hatch_position(habitat, 0.0)
-			var hatch_distance: float = Vector2(position.x - hatch.x, position.z - hatch.z).length()
-			if hatch_distance < 1.6:
-				var ramp: float = clampf((hatch_distance - 0.15) / 1.45, 0.0, 1.0)
-				floor_height = lerpf(hatch.y, floor_height, ramp)
-		position.y = floor_height
-		_astronaut.global_position = position
+		position.y = hit.position.y + ground_clearance + _task_height_offset
+	else:
+		# Keep an actor visible even during the first physics frame before the
+		# terrain collider becomes available.
+		position.y = maxf(position.y, _ground_y + ground_clearance)
+	return position
 
 
 func _on_scenario_changed(scenario: String) -> void:
@@ -147,14 +195,21 @@ func _begin_shelter() -> void:
 	if current_task == "rover":
 		simulation.cancel_rover_departure(self)
 	current_task = ""
-	_route_home("shelter")
+	_astronaut.visible = false
+	_astronaut.scale = _display_scale
+	_task_height_offset = 0.0
+	_inside = true
+	_set_state("sheltering")
 
 
 func _go_home() -> void:
-	if _inside:
-		_set_state("idle")
-		return
-	_route_home("home")
+	# Tasks are staged in place; remove the worker instead of sending it through
+	# a long off-screen return route.
+	_astronaut.visible = false
+	_astronaut.scale = _display_scale
+	_task_height_offset = 0.0
+	_inside = true
+	_set_state("idle")
 
 
 func _route_home(purpose: String) -> void:
@@ -164,68 +219,66 @@ func _route_home(purpose: String) -> void:
 		_travel_purpose = ""
 		_set_state("idle")
 	else:
-		var plaza: Vector3 = _home_position(home)
-		var hatch_exit: Vector3 = _hatch_position(habitat, 1.2)
-		var bypass_x: float = _habitat_bypass_x(habitat)
+		var front_apron: Vector3 = _grounded_position(home.global_position)
 		_route.clear()
-		_route.append(Vector3(_astronaut.global_position.x, _ground_y, plaza.z))
-		_route.append(plaza)
-		_route.append(Vector3(bypass_x, _ground_y, plaza.z))
-		_route.append(Vector3(bypass_x, _ground_y, hatch_exit.z))
-		_route.append(hatch_exit)
-		_route.append(_hatch_position(habitat, 0.0))
+		for index: int in range(_return_route.size() - 1, -1, -1):
+			_route.append(_return_route[index])
+		_route.append(front_apron)
 		_begin_route(purpose)
 
 
-func _home_position(home: Node3D) -> Vector3:
-	var offset: Vector3 = home_visible_offset + Vector3((crew_index % 2) * 1.1, 0.0, floori(float(crew_index) / 2.0) * 1.1)
-	var target: Vector3 = home.global_position + base.global_basis * offset
-	target.y = _ground_y
-	return target
-
-
-func _start_outside_route(target: Vector3, purpose: String) -> void:
+func _start_outside_route(target: Vector3, purpose: String, network_nodes: Array[String]) -> void:
 	var home: Node3D = base.get_node_or_null("AstronautHome")
 	var habitat: Node3D = base.get_node_or_null("CrewHabitat")
 	if _inside and home != null and habitat != null:
-		_astronaut.global_position = _hatch_position(habitat, -0.1)
+		# AstronautHome is the authored exit point by the module. Do not add a
+		# gameplay offset here: an offset makes the crew appear from open terrain.
+		_astronaut.global_position = _grounded_position(home.global_position)
 		_astronaut.visible = true
 		_inside = false
-	var plaza: Vector3 = _home_position(home) if home != null else _astronaut.global_position
 	_route.clear()
-	if habitat != null:
-		var hatch_exit: Vector3 = _hatch_position(habitat, 1.2)
-		var bypass_x: float = _habitat_bypass_x(habitat)
-		_route.append(hatch_exit)
-		_route.append(Vector3(bypass_x, _ground_y, hatch_exit.z))
-		_route.append(Vector3(bypass_x, _ground_y, plaza.z))
-	_route.append(plaza)
-	_route.append(Vector3(target.x, _ground_y, plaza.z))
+	_return_route.clear()
+	# Bring the crew into the camera-facing apron first.  The old routes began
+	# by sending them behind the habitat, so their only visible movement was a
+	# distant speck disappearing away from the player.
+	var camera_apron := _camera_facing_apron()
+	_route.append(camera_apron)
+	_return_route.append(camera_apron)
+	for node_name: String in network_nodes:
+		var marker: Node3D = base.get_node_or_null(node_name)
+		if marker != null:
+			var waypoint := _grounded_position(marker.global_position)
+			_route.append(waypoint)
+			_return_route.append(waypoint)
 	_route.append(target)
 	_begin_route(purpose)
 
 
-func _hatch_position(habitat: Node3D, outward: float) -> Vector3:
-	# The door and its steps are on the model's local -X/+Z diagonal.
-	var hatch: Vector3 = habitat.to_global(Vector3(-0.75, 0.15, 0.75))
-	var normal: Vector3 = (habitat.global_basis * Vector3(-1.0, 0.0, 1.0)).normalized()
-	return hatch + normal * outward
-
-
-func _habitat_bypass_x(habitat: Node3D) -> float:
-	# The current station places the hatch behind the habitat; skirt its west side.
-	return habitat.global_position.x - 3.2
+func _camera_facing_apron() -> Vector3:
+	var camera: Camera3D = base.get_node_or_null("../Camera3D")
+	if camera == null:
+		return _grounded_position(_astronaut.global_position)
+	var direction: Vector3 = camera.global_position - _astronaut.global_position
+	direction.y = 0.0
+	if direction.length_squared() < 0.001:
+		return _grounded_position(_astronaut.global_position)
+	# Keep the actor in the play area rather than marching all the way to the
+	# camera; this is enough to place their first, clearly visible walk segment
+	# on the foreground side of the base.
+	return _grounded_position(_astronaut.global_position + direction.normalized() * 4.5)
 
 
 func _begin_route(purpose: String) -> void:
+	for index: int in _route.size():
+		_route[index] = _grounded_position(_route[index])
 	_travel_purpose = purpose
-	_destination = _route.pop_front()
+	_destination = _grounded_position(_route.pop_front())
 	_set_state("walking")
 
 
 func _next_waypoint() -> void:
 	if not _route.is_empty():
-		_destination = _route.pop_front()
+		_destination = _grounded_position(_route.pop_front())
 	else:
 		_arrive()
 
@@ -255,5 +308,29 @@ func _set_state(value: String) -> void:
 	if _animation != null:
 		var animation_name: String = "Walking_A" if state == "walking" else "Idle_A"
 		if _animation.has_animation(animation_name):
-			_animation.play(animation_name)
+			# Do not restart a clip every frame: it makes the walk pose visibly snap
+			# when a route contains several short waypoints.
+			if _animation.current_animation != animation_name:
+				_animation.play(animation_name, 0.15)
 	state_changed.emit(state)
+
+
+func _configure_movement_animations() -> void:
+	if _animation == null:
+		return
+	# Imported glTF clips are not guaranteed to carry loop metadata.  Crew can
+	# walk for longer than one source clip, so both locomotion states must loop.
+	for animation_name: String in ["Idle_A", "Walking_A"]:
+		var clip: Animation = _animation.get_animation(animation_name)
+		if clip != null:
+			clip.loop_mode = Animation.LOOP_LINEAR
+
+
+func _set_animation_paused(paused: bool) -> void:
+	if _animation == null:
+		return
+	if paused:
+		if _animation.is_playing():
+			_animation.pause()
+	elif not _animation.is_playing() and state in ["walking", "working"]:
+		_animation.play("Walking_A" if state == "walking" else "Idle_A", 0.15)
