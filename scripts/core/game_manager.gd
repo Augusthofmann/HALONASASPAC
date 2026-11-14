@@ -5,6 +5,7 @@ signal time_changed(day: int, hour: int, minute: int)
 signal speed_changed(multiplier: int)
 signal pause_changed(paused: bool)
 signal simulation_step(minutes: float)
+signal campaign_finished(success: bool)
 
 const MINUTES_PER_MIS_DAY: int = 1440
 const MAX_MIS_DAYS: int = 30
@@ -33,6 +34,8 @@ func _process(delta: float) -> void:
 		campaign_complete = elapsed_minutes >= MAX_MIS_DAYS * MINUTES_PER_MIS_DAY
 		mis_day = mini(MAX_MIS_DAYS, 1 + floori(float(elapsed_minutes) / MINUTES_PER_MIS_DAY))
 		time_changed.emit(mis_day, floori(float(elapsed_minutes % MINUTES_PER_MIS_DAY) / 60.0), elapsed_minutes % 60)
+		if campaign_complete:
+			campaign_finished.emit(resources != null and resources.crew_surviving)
 
 
 func set_paused(value: bool) -> void:
@@ -43,8 +46,8 @@ func set_paused(value: bool) -> void:
 
 
 func set_speed(value: int) -> void:
-	if value not in [1, 2, 5]:
-		push_warning("Simulation speed must be 1, 2 or 5")
+	if value not in [1, 2, 5, 10]:
+		push_warning("Simulation speed must be 1, 2, 5 or 10")
 		return
 	if speed == value:
 		return
