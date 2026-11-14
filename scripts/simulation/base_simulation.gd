@@ -21,6 +21,7 @@ signal radiation_hazard_changed(active: bool)
 @export var research_points_per_hour: float = 1.0
 @export_range(0.0, 1.0) var solar_efficiency: float = 0.6
 @export var solar_cleaned_efficiency: float = 1.0
+@export_range(0.35, 0.8, 0.01) var crew_visual_scale: float = 0.55
 
 var radiation_level: float = 0.0 # fictional 0–100 risk index
 var crew_dose: float = 0.0 # fictional cumulative dose units
@@ -55,7 +56,7 @@ func _ready() -> void:
 			if index > 0:
 				actor.name = "Astronaut%d" % (index + 1)
 				base.add_child(actor)
-			actor.scale = Vector3.ONE * 0.38
+			actor.scale = Vector3.ONE * crew_visual_scale
 			var controller: Node = load("res://scripts/characters/crew_task_controller.gd").new()
 			controller.name = "CrewTaskController"
 			controller.base = base

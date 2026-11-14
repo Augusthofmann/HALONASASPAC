@@ -14,9 +14,13 @@ extends Control
 var pause_button: Button
 var solar_button: Button
 var crew_readout: Label
+var briefing: PanelContainer
 
 
 func _ready() -> void:
+	# The HUD is a visual overlay, but its runtime-created controls must still
+	# receive pointer events.
+	mouse_filter = Control.MOUSE_FILTER_PASS
 	_apply_readability()
 	clock.time_changed.connect(_on_time_changed)
 	clock.pause_changed.connect(_on_pause_changed)
@@ -35,6 +39,7 @@ func _ready() -> void:
 		crew.state_changed.connect(_on_crew_state_changed)
 		crew.task_finished.connect(_on_crew_task_finished)
 	_create_controls()
+	_create_mission_briefing()
 	_update_time()
 	_update_resources()
 	_update_status()
@@ -58,43 +63,50 @@ func _apply_readability() -> void:
 func _create_controls() -> void:
 	var controls := HBoxContainer.new()
 	controls.name = "SimulationControls"
-	controls.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	controls.position = Vector2(-320.0, 105.0)
+	# Stretch each row relative to the HUD width. HBoxContainer then places both
+	# the visible button and its input rect from the same layout calculation.
+	controls.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	controls.alignment = BoxContainer.ALIGNMENT_CENTER
+	controls.offset_top = 105.0
+	controls.offset_bottom = 141.0
 	controls.add_theme_constant_override("separation", 8)
 	add_child(controls)
 	pause_button = Button.new()
-	pause_button.add_theme_font_size_override("font_size", 21)
 	pause_button.text = "PAUSE"
-	pause_button.pressed.connect(func() -> void: clock.set_paused(not clock.paused))
+	pause_button.add_theme_font_size_override("font_size", 21)
 	controls.add_child(pause_button)
+	pause_button.pressed.connect(func() -> void: clock.set_paused(not clock.paused))
 	for multiplier: int in [1, 2, 5, 10]:
 		var button := Button.new()
-		button.add_theme_font_size_override("font_size", 21)
 		button.text = "%dx" % multiplier
-		button.pressed.connect(func() -> void: clock.set_speed(multiplier))
+		button.add_theme_font_size_override("font_size", 21)
 		controls.add_child(button)
+		button.pressed.connect(func() -> void: clock.set_speed(multiplier))
 	solar_button = Button.new()
-	solar_button.add_theme_font_size_override("font_size", 21)
 	solar_button.text = "SOLAR: ON"
-	solar_button.pressed.connect(_toggle_solar)
+	solar_button.add_theme_font_size_override("font_size", 21)
 	controls.add_child(solar_button)
+	solar_button.pressed.connect(_toggle_solar)
 	var demo_button := Button.new()
-	demo_button.add_theme_font_size_override("font_size", 21)
 	demo_button.text = "DEMO"
+	demo_button.add_theme_font_size_override("font_size", 21)
+	controls.add_child(demo_button)
 	demo_button.tooltip_text = "Start a fictional guided demo (about 3 minutes)."
 	demo_button.pressed.connect(_start_demo)
-	controls.add_child(demo_button)
 	var tasks := HBoxContainer.new()
 	tasks.name = "CrewTasks"
-	tasks.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	tasks.position = Vector2(-380.0, 155.0)
+	tasks.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	tasks.alignment = BoxContainer.ALIGNMENT_CENTER
+	tasks.offset_top = 155.0
+	tasks.offset_bottom = 191.0
+	tasks.add_theme_constant_override("separation", 6)
 	add_child(tasks)
-	for entry: Array in [["CLEAN", "clean_solar"], ["WATER +1", "collect_water"], ["FOOD +1", "collect_food"], ["REPAIR", "repair"], ["ROVER", "rover"]]:
+	for entry: Array in [["SOLAR SERVICE", "solar_maintenance"], ["WATER", "collect_water"], ["O₂", "collect_oxygen"], ["FOOD +1", "collect_food"], ["SCIENCE", "repair_science"], ["RADIATION", "radiation"], ["ROVER", "rover"]]:
 		var task_button := Button.new()
-		task_button.add_theme_font_size_override("font_size", 20)
 		task_button.text = entry[0]
-		task_button.pressed.connect(_request_task.bind(entry[1]))
+		task_button.add_theme_font_size_override("font_size", 20)
 		tasks.add_child(task_button)
+		task_button.pressed.connect(_request_task.bind(entry[1]))
 	crew_readout = Label.new()
 	crew_readout.name = "CrewReadout"
 	crew_readout.set_anchors_preset(Control.PRESET_CENTER_TOP)
@@ -104,12 +116,60 @@ func _create_controls() -> void:
 	_on_crew_updated()
 
 
+func _create_mission_briefing() -> void:
+	briefing = PanelContainer.new()
+	briefing.name = "MissionBriefing"
+	briefing.set_anchors_preset(Control.PRESET_CENTER)
+	briefing.offset_left = -300.0
+	briefing.offset_top = -175.0
+	briefing.offset_right = 300.0
+	briefing.offset_bottom = 175.0
+	briefing.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(briefing)
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 14)
+	briefing.add_child(column)
+	var title := Label.new()
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 30)
+	title.text = "JUNIOR ASTRONAUT\nBETA 0.2"
+	column.add_child(title)
+	var copy := Label.new()
+	copy.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	copy.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	copy.add_theme_font_size_override("font_size", 18)
+	copy.text = "SOLAR SERVICE deploys crew at SolarArraySouth. WATER, O₂, FOOD, and SCIENCE deploy workers at the matching base modules. Radiation warnings can turn into dangerous solar events."
+	column.add_child(copy)
+	var start := Button.new()
+	start.text = "CONTINUE MISSION" if clock.has_saved_mission else "START MISSION"
+	start.add_theme_font_size_override("font_size", 22)
+	start.pressed.connect(_start_mission)
+	column.add_child(start)
+	var reset := Button.new()
+	reset.text = "NEW MISSION"
+	reset.add_theme_font_size_override("font_size", 18)
+	reset.pressed.connect(func() -> void: clock.new_mission())
+	column.add_child(reset)
+
+
+func _start_mission() -> void:
+	briefing.queue_free()
+	briefing = null
+	clock.start_mission()
+
+
 func _request_task(task: String) -> void:
-	var accepted: bool = simulation.start_rover() if task == "rover" else simulation.assign_task(task)
-	if not accepted:
-		status.text = "No available crew or rover.\nWait for a task to finish."
+	var accepted: bool
+	if task == "rover":
+		accepted = simulation.start_rover()
+	elif task == "radiation":
+		accepted = simulation.start_scenario("solar_flare")
 	else:
-		var tips: Dictionary = {"clean_solar": "Dust blocks sunlight. Clean panels make more power.", "collect_water": "Water is precious on the Moon. Reuse saves supplies.", "collect_food": "Food keeps the crew healthy. Plan ahead!", "repair": "Fix leaks and equipment to save resources.", "rover": "Rovers explore while the crew shares limited supplies."}
+		accepted = simulation.assign_task(task)
+	if not accepted:
+		status.text = "Action unavailable.\nWait for crew, power, or the current alert."
+	else:
+		var tips: Dictionary = {"solar_maintenance": "SolarArraySouth is being cleaned and repaired.", "collect_water": "Crew is servicing WaterStorage.", "collect_oxygen": "Crew is restocking oxygen at CargoDepot.", "collect_food": "Crew is harvesting food at HydroponicsFarm.", "repair_science": "Crew is restoring ScienceDome instruments.", "radiation": "Solar flare active. Crew will shelter from radiation.", "rover": "Rovers explore while the crew shares limited supplies."}
 		status.text = str(tips.get(task, ""))
 
 
@@ -152,13 +212,13 @@ func _on_campaign_finished(success: bool) -> void:
 	var restart := Button.new()
 	restart.name = "Restart"
 	restart.text = "RESTART MISSION"
-	restart.pressed.connect(func() -> void: get_tree().reload_current_scene())
+	restart.pressed.connect(func() -> void: clock.new_mission())
 	column.add_child(restart)
 
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_C:
-		_request_task("clean_solar")
+		_request_task("solar_maintenance")
 
 
 func _on_crew_updated() -> void:
@@ -189,6 +249,8 @@ func _on_time_changed(_day: int, _hour: int, _minute: int) -> void:
 
 func _on_pause_changed(_paused: bool) -> void:
 	pause_button.text = "RESUME" if clock.paused else "PAUSE"
+	if clock.paused:
+		clock.save_mission()
 	_update_time()
 
 
@@ -277,7 +339,7 @@ func _update_status() -> void:
 		var crew: Node = get_node_or_null("../../LunarBase/Astronaut/CrewTaskController")
 		if crew != null and crew.state == "sheltering":
 			status.text = "Crew sheltered\nRadiation exposure reduced."
-		elif crew != null and crew.current_task == "clean_solar":
-			status.text = "Solar cleaning in progress\nCrew is working outside."
+		elif crew != null and crew.current_task in ["clean_solar", "solar_maintenance", "repair"]:
+			status.text = "Solar service in progress\nCrew is working at SolarArraySouth."
 		else:
 			status.text = "Solar panels clean · Output 100%" if simulation.solar_efficiency >= simulation.solar_cleaned_efficiency else "Crew safe · Life support online\nPress C to clean solar panels."

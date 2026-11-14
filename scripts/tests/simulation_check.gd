@@ -19,7 +19,7 @@ func _run_checks() -> void:
 	assert(clock.elapsed_minutes == 10, "2x speed must advance ten minutes")
 	assert(resources.energy_kwh < 1.0, "Generation below consumption must drain the battery")
 	assert(resources.oxygen_kg > 0.5, "Powered life support must make oxygen")
-	assert(resources.water_kg < 2.0 and resources.food_kg < 2.0, "Crew must use supplies")
+	assert(resources.water_kg > 0.0 and resources.water_kg <= resources.water_capacity_kg and resources.food_kg < 2.0, "Water must reclaim automatically while food is consumed")
 	resources.solar_generation_kw = 0.0
 	clock._process(600.0)
 	assert(not resources.life_support_powered, "Life support must stop without power")

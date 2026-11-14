@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="Junior Astronaut Mission Trainer"
+config/name="Junior Astronaut Mission Trainer — Beta 0.2"
 run/main_scene="uid://gpl4sppkwcr6"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
@@ -21,10 +21,6 @@ window/size/viewport_width=1920
 window/size/viewport_height=1080
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
-
-[dotnet]
-
-project/assembly_name="Junior Astronaut Mission Trainer"
 
 [physics]
 

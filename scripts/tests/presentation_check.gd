@@ -10,6 +10,7 @@ func _check() -> void:
 	var simulation: Node = scene.get_node("BaseSimulation")
 	var resources: Node = scene.get_node("ResourceManager")
 	var hud: Node = scene.get_node("UI/UIStub")
+	clock.start_mission()
 	var initial_day_length: float = clock.REAL_SECONDS_PER_MIS_DAY
 	hud._start_demo()
 	var demo: Node = simulation.get_node("DemoScenario")

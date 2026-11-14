@@ -11,6 +11,7 @@ signal crew_survival_changed(surviving: bool)
 @export var energy_kwh: float = 1.0
 @export var oxygen_capacity_kg: float = 2.0
 @export var oxygen_kg: float = 0.5
+@export var water_capacity_kg: float = 2.0
 @export var water_kg: float = 2.0
 @export var food_kg: float = 2.0
 
@@ -23,6 +24,7 @@ signal crew_survival_changed(surviving: bool)
 @export var oxygen_production_kg_per_hour: float = 0.03
 @export var oxygen_use_kg_per_hour: float = 0.02
 @export var water_use_kg_per_hour: float = 0.05
+@export var water_reclamation_kg_per_hour: float = 0.08
 @export var food_use_kg_per_hour: float = 0.03
 ## Simplified, fictional rates for the prototype, not NASA measurements.
 @export var water_per_oxygen_kg: float = 1.125
@@ -60,12 +62,19 @@ func advance_minutes(minutes: float) -> void:
 			water_kg = maxf(0.0, water_kg - oxygen_made * water_per_oxygen_kg)
 		oxygen_kg += oxygen_made
 	oxygen_kg = maxf(0.0, oxygen_kg - (oxygen_use_kg_per_hour + oxygen_leak_kg_per_hour) * hours)
-	# Recycling returns part of crew water use while powered; leaks are never recycled.
+	# Water reclamation mirrors oxygen generation: when life support has power,
+	# the closed-loop system replenishes more water than normal crew use.
 	var recycled: float = clampf(water_recycling_fraction, 0.0, 1.0) if support_powered else 0.0
-	water_kg = maxf(0.0, water_kg - (water_use_kg_per_hour * (1.0 - recycled) + water_leak_kg_per_hour) * hours)
+	var reclaimed: float = water_reclamation_kg_per_hour * hours if support_powered else 0.0
+	water_kg = clampf(water_kg + reclaimed - (water_use_kg_per_hour * (1.0 - recycled) + water_leak_kg_per_hour) * hours, 0.0, water_capacity_kg)
 	food_kg = maxf(0.0, food_kg - food_use_kg_per_hour * hours)
 	var surviving: bool = habitat_powered and oxygen_kg > 0.0 and water_kg > 0.0 and food_kg > 0.0
 	if crew_surviving != surviving:
 		crew_surviving = surviving
 		crew_survival_changed.emit(surviving)
+	resources_changed.emit(energy_kwh, oxygen_kg, water_kg, food_kg)
+
+
+func refill_water() -> void:
+	water_kg = water_capacity_kg
 	resources_changed.emit(energy_kwh, oxygen_kg, water_kg, food_kg)
