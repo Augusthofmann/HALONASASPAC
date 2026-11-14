@@ -15,7 +15,7 @@ func _run_checks() -> void:
 	assert(clock.elapsed_minutes == 0, "Pause must stop the clock")
 	clock.set_paused(false)
 	clock.set_speed(2)
-	clock._process(5.0)
+	clock._process(10.0 / 9.6)
 	assert(clock.elapsed_minutes == 10, "2x speed must advance ten minutes")
 	assert(resources.energy_kwh > 1.0, "Solar generation must charge the battery")
 	assert(resources.oxygen_kg > 0.5, "Powered life support must make oxygen")

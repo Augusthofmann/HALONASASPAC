@@ -4,26 +4,35 @@ extends Node
 signal time_changed(day: int, hour: int, minute: int)
 signal speed_changed(multiplier: int)
 signal pause_changed(paused: bool)
+signal simulation_step(minutes: float)
 
-@export_range(0.1, 60.0, 0.1) var seconds_per_game_minute: float = 1.0
+const MINUTES_PER_MIS_DAY: int = 1440
+const MAX_MIS_DAYS: int = 30
+const REAL_SECONDS_PER_MIS_DAY: float = 300.0
+
 @export var resources: Node
 
 var speed: int = 1
 var paused: bool = false
 var elapsed_minutes: int = 0
+var mis_day: int = 1
+var campaign_complete: bool = false
 var _accumulator: float = 0.0
 
 
 func _process(delta: float) -> void:
-	if paused:
+	if paused or campaign_complete:
 		return
-	_accumulator += delta * float(speed)
-	while _accumulator >= seconds_per_game_minute:
-		_accumulator -= seconds_per_game_minute
+	_accumulator += delta * float(speed) * MINUTES_PER_MIS_DAY / REAL_SECONDS_PER_MIS_DAY
+	while _accumulator >= 1.0 and not campaign_complete:
+		_accumulator -= 1.0
 		elapsed_minutes += 1
+		simulation_step.emit(1.0)
 		if resources != null:
 			resources.advance_minutes(1.0)
-		time_changed.emit(1 + floori(float(elapsed_minutes) / 1440.0), floori(float(elapsed_minutes) / 60.0) % 24, elapsed_minutes % 60)
+		campaign_complete = elapsed_minutes >= MAX_MIS_DAYS * MINUTES_PER_MIS_DAY
+		mis_day = mini(MAX_MIS_DAYS, 1 + floori(float(elapsed_minutes) / MINUTES_PER_MIS_DAY))
+		time_changed.emit(mis_day, floori(float(elapsed_minutes % MINUTES_PER_MIS_DAY) / 60.0), elapsed_minutes % 60)
 
 
 func set_paused(value: bool) -> void:
@@ -34,8 +43,8 @@ func set_paused(value: bool) -> void:
 
 
 func set_speed(value: int) -> void:
-	if value != 1 and value != 2:
-		push_warning("Simulation speed must be 1 or 2")
+	if value not in [1, 2, 5]:
+		push_warning("Simulation speed must be 1, 2 or 5")
 		return
 	if speed == value:
 		return

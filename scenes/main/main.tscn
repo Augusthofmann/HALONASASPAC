@@ -2,6 +2,10 @@
 
 [ext_resource type="PackedScene" uid="uid://h0ls36sf0usc" path="res://scenes/world/lunar_world.tscn" id="1_iuonh"]
 [ext_resource type="PackedScene" uid="uid://crgjir11hlpxe" path="res://scenes/buildings/lunar_base.tscn" id="2_k2fmo"]
+[ext_resource type="Script" path="res://scripts/core/game_manager.gd" id="3_clock"]
+[ext_resource type="Script" path="res://scripts/simulation/resource_manager.gd" id="4_resources"]
+[ext_resource type="Script" path="res://scripts/ui/hud.gd" id="5_hud"]
+[ext_resource type="Script" path="res://scripts/simulation/base_simulation.gd" id="6_base_sim"]
 
 [sub_resource type="Environment" id="Environment_vom5j"]
 background_mode = 1
@@ -48,6 +52,19 @@ corner_radius_bottom_left = 8
 
 [node name="main" type="Node3D" unique_id=434998669]
 
+[node name="ResourceManager" type="Node" parent="."]
+script = ExtResource("4_resources")
+
+[node name="GameManager" type="Node" parent="." node_paths=PackedStringArray("resources")]
+script = ExtResource("3_clock")
+resources = NodePath("../ResourceManager")
+
+[node name="BaseSimulation" type="Node" parent="." node_paths=PackedStringArray("base", "clock", "resources")]
+script = ExtResource("6_base_sim")
+base = NodePath("../LunarBase")
+clock = NodePath("../GameManager")
+resources = NodePath("../ResourceManager")
+
 [node name="CameraRing" type="Node3D" parent="." unique_id=1573871549]
 
 [node name="Camera3D" type="Camera3D" parent="CameraRing" unique_id=564873332]
@@ -81,7 +98,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-metadata/_visual_only = true
+script = ExtResource("5_hud")
 
 [node name="MissionPanel" type="Panel" parent="UI/UIStub" unique_id=2011266579]
 layout_mode = 0
