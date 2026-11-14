@@ -1,3 +1,27 @@
-# Godot 4+ specific ignores
+# Godot 4+
 .godot/
+.import/
+.nomedia
+
+# Android
 /android/
+
+# Godot configuration
+export.cfg
+export_credentials.cfg
+*.tmp
+
+# Imported translations
+*.translation
+
+# C# / Mono
+.mono/
+data_*/
+mono_crash.*.json
+~*.dll
+
+# Export outputs
+*.exe
+
+# Uncomment if PCK files are not needed in Git
+# *.pck
