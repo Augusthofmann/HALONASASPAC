@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://gpl4sppkwcr6"]
+
+[ext_resource type="PackedScene" uid="uid://h0ls36sf0usc" path="res://scenes/world/lunar_world.tscn" id="1_iuonh"]
+[ext_resource type="PackedScene" uid="uid://crgjir11hlpxe" path="res://scenes/buildings/lunar_base.tscn" id="2_k2fmo"]
+
+[sub_resource type="Environment" id="Environment_vom5j"]
+background_mode = 1
+background_color = Color(0.03137255, 0.043137256, 0.078431375, 1)
+
+[node name="main" type="Node3D" unique_id=434998669]
+
+[node name="CameraRing" type="Node3D" parent="." unique_id=1573871549]
+
+[node name="Camera3D" type="Camera3D" parent="CameraRing" unique_id=564873332]
+transform = Transform3D(0.7071068, -0.4086071, 0.5770964, 0, 0.81613773, 0.5778576, -0.7071068, -0.4086071, 0.5770964, 15, 15, 15)
+projection = 1
+current = true
+size = 20.0
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=962096258]
+transform = Transform3D(0.8660254, 0.35355338, -0.35355338, 0, 0.70710677, 0.70710677, 0.5, -0.6123724, 0.6123724, 0, 0, 0)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1378165606]
+environment = SubResource("Environment_vom5j")
+
+[node name="LunarWorld" parent="." unique_id=729673042 instance=ExtResource("1_iuonh")]
+
+[node name="LunarBase" parent="." unique_id=1802121264 instance=ExtResource("2_k2fmo")]
+
+[node name="UI" type="CanvasLayer" parent="." unique_id=1233507358]
