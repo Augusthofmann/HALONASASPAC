@@ -1,9 +1,13 @@
 [gd_scene load_steps=2 format=3]
 
-[ext_resource type="PackedScene" path="res://assets/characters/astronaut.glb" id="1_astronaut"]
+[ext_resource type="PackedScene" path="res://assets/characters/astronaut_animated.glb" id="1_astronaut"]
 
 [node name="Astronaut" type="Node3D"]
 
 [node name="Model" parent="." instance=ExtResource("1_astronaut")]
+editable_children = true
+
+[node name="AnimationPlayer" parent="Model" index="0"]
+autoplay = "Idle_A"
 
 [node name="TaskAnchor" type="Marker3D" parent="."]
