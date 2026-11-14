@@ -34,6 +34,18 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
+[sub_resource type="StyleBoxFlat" id="DangerPanel"]
+bg_color = Color(0.16, 0.025, 0.035, 0.94)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.18, 0.16, 0.92)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
 [node name="main" type="Node3D" unique_id=434998669]
 
 [node name="CameraRing" type="Node3D" parent="." unique_id=1573871549]
@@ -97,7 +109,7 @@ offset_right = 435.0
 offset_bottom = 68.0
 theme_override_colors/font_color = Color(0.78, 0.84, 0.9, 1)
 theme_override_font_sizes/font_size = 14
-text = "MISSION DAY 01  ·  SOUTH POLAR OUTPOST"
+text = "MISSION DAY 01 / 30  ·  SOUTH POLAR OUTPOST"
 
 [node name="ResourcesPanel" type="Panel" parent="UI/UIStub" unique_id=810334649]
 layout_mode = 0
@@ -106,7 +118,7 @@ anchor_right = 1.0
 offset_left = -340.0
 offset_top = 26.0
 offset_right = -28.0
-offset_bottom = 176.0
+offset_bottom = 222.0
 grow_horizontal = 0
 theme_override_styles/panel = SubResource("HUDPanel")
 
@@ -125,13 +137,15 @@ layout_mode = 0
 offset_left = 18.0
 offset_top = 42.0
 offset_right = 292.0
-offset_bottom = 132.0
+offset_bottom = 184.0
 theme_override_colors/font_color = Color(0.9, 0.94, 0.97, 1)
 theme_override_font_sizes/font_size = 16
 text = "⚡  ENERGY      100%
 ◉  OXYGEN       100%
 ≈  WATER        100%
-▣  FOOD         100%"
+▣  FOOD         100%
+☢  RADIATION    0%
+✦  RESEARCH     0"
 
 [node name="ObjectivePanel" type="Panel" parent="UI/UIStub" unique_id=1433852204]
 layout_mode = 0
@@ -176,5 +190,56 @@ offset_bottom = 56.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(0.76, 0.87, 0.95, 0.92)
 theme_override_font_sizes/font_size = 18
-text = "06:00  •  PAUSED"
+text = "MISSION DAY 01  •  06:00  •  PAUSED"
 horizontal_alignment = 1
+
+[node name="NotificationBanner" type="Panel" parent="UI/UIStub"]
+layout_mode = 0
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -420.0
+offset_top = -206.0
+offset_right = -28.0
+offset_bottom = -138.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("AlertPanel")
+
+[node name="Label" type="Label" parent="UI/UIStub/NotificationBanner"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 11.0
+offset_right = 374.0
+offset_bottom = 57.0
+theme_override_colors/font_color = Color(1, 0.78, 0.34, 1)
+theme_override_font_sizes/font_size = 16
+text = "NOTIFICATION\nDONKI WINDOW: JUN 01–30, 2026"
+
+[node name="DangerBanner" type="Panel" parent="UI/UIStub"]
+visible = false
+layout_mode = 0
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -420.0
+offset_top = -126.0
+offset_right = -28.0
+offset_bottom = -58.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("DangerPanel")
+
+[node name="Label" type="Label" parent="UI/UIStub/DangerBanner"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 11.0
+offset_right = 374.0
+offset_bottom = 57.0
+theme_override_colors/font_color = Color(1, 0.58, 0.54, 1)
+theme_override_font_sizes/font_size = 16
+text = "DANGER\nRADIATION ALERT — SHIELD CREW"
