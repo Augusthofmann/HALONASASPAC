@@ -5,7 +5,7 @@ signal time_changed(day: int, hour: int, minute: int)
 signal speed_changed(multiplier: int)
 signal pause_changed(paused: bool)
 signal simulation_step(minutes: float)
-signal campaign_finished(success: bool)
+signal campaign_finished(success: bool, reason: String)
 signal mission_loaded(has_save: bool)
 signal score_changed(score: int)
 signal language_changed(language: String)
@@ -28,6 +28,7 @@ var has_saved_mission: bool = false
 var mission_started: bool = false
 var mission_score: int = 0
 var ui_language: String = "en"
+var finish_reason: String = ""
 var _autosave_elapsed: float = 0.0
 
 const SAVE_PATH := "user://mission_beta_02.save"
@@ -66,8 +67,9 @@ func _process(delta: float) -> void:
 		mis_day = mini(MAX_MIS_DAYS, 1 + floori(float(elapsed_minutes) / MINUTES_PER_MIS_DAY))
 		time_changed.emit(mis_day, floori(float(elapsed_minutes % MINUTES_PER_MIS_DAY) / 60.0), elapsed_minutes % 60)
 		if campaign_complete:
+			finish_reason = "mission_complete"
 			save_mission()
-			campaign_finished.emit(resources != null and resources.crew_surviving)
+			campaign_finished.emit(resources != null and resources.crew_surviving, finish_reason)
 
 
 func _on_crew_survival_changed(surviving: bool) -> void:
@@ -75,8 +77,19 @@ func _on_crew_survival_changed(surviving: bool) -> void:
 		return
 	campaign_complete = true
 	paused = true
+	finish_reason = "life_support"
 	save_mission()
-	campaign_finished.emit(false)
+	campaign_finished.emit(false, finish_reason)
+
+
+func fail_mission(reason: String) -> void:
+	if campaign_complete:
+		return
+	campaign_complete = true
+	paused = true
+	finish_reason = reason
+	save_mission()
+	campaign_finished.emit(false, finish_reason)
 
 
 func set_paused(value: bool) -> void:
@@ -124,6 +137,7 @@ func save_mission() -> void:
 	save.set_value("mission", "speed", speed)
 	save.set_value("mission", "campaign_complete", campaign_complete)
 	save.set_value("mission", "score", mission_score)
+	save.set_value("mission", "finish_reason", finish_reason)
 	save.set_value("settings", "ui_language", ui_language)
 	save.set_value("resources", "energy_kwh", resources.energy_kwh)
 	save.set_value("resources", "oxygen_kg", resources.oxygen_kg)
@@ -156,6 +170,7 @@ func _load_mission() -> bool:
 	speed = int(save.get_value("mission", "speed", 1))
 	campaign_complete = bool(save.get_value("mission", "campaign_complete", false))
 	mission_score = maxi(0, int(save.get_value("mission", "score", 0)))
+	finish_reason = str(save.get_value("mission", "finish_reason", ""))
 	ui_language = str(save.get_value("settings", "ui_language", "en"))
 	if resources != null:
 		resources.energy_kwh = float(save.get_value("resources", "energy_kwh", resources.energy_kwh))

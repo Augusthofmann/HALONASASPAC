@@ -8,6 +8,7 @@ signal incident_changed(incident: String)
 signal radiation_hazard_changed(active: bool)
 signal action_cooldown_changed(action: String, remaining_minutes: float)
 signal dust_storm_changed(active: bool)
+signal nasa_event_started(event: Dictionary)
 
 @export var base: Node
 @export var clock: Node
@@ -18,7 +19,7 @@ signal dust_storm_changed(active: bool)
 @export var flare_radiation_level: float = 70.0
 @export var cme_radiation_level: float = 60.0
 @export var sep_radiation_level: float = 95.0
-@export var dose_per_level_per_hour: float = 0.01
+@export var dose_per_level_per_hour: float = 0.04
 @export var protected_mode: bool = false
 @export var research_points_per_hour: float = 1.0
 @export_range(0.0, 1.0) var solar_efficiency: float = 0.6
@@ -43,15 +44,19 @@ var _next_incident_minutes: float = 720.0
 var _rng := RandomNumberGenerator.new()
 var _radiation_hazard: bool = false
 const ACTION_COOLDOWN_MINUTES: float = 60.0
+const NASA_ARCHIVE_PATH := "res://data/nasa_space_weather_archive.json"
+const MAX_SAFE_DOSE: float = 4.0 # Gameplay safety meter, not a medical limit.
 var action_cooldowns: Dictionary = {}
 var _radiation_roll_minutes: float = 0.0
 var _dust_storm_roll_minutes: float = 0.0
 var dust_storm_active: bool = false
 var shield_boost_minutes: float = 0.0
+var nasa_events: Array = []
 
 
 func _ready() -> void:
 	_rng.randomize()
+	_load_nasa_archive()
 	clock.simulation_step.connect(advance_minutes)
 	radiation_level = clampf(background_radiation_level, 0.0, 100.0)
 	_refresh_power()
@@ -170,6 +175,7 @@ func start_scenario(scenario: String) -> bool:
 	_cme_delay_minutes = 30.0 if scenario == "cme_warning" else 0.0
 	_remaining_minutes = 90.0 if scenario == "cme_warning" else 60.0
 	_update_radiation()
+	_emit_nasa_event(scenario)
 	scenario_changed.emit(active_scenario)
 	return true
 
@@ -186,12 +192,12 @@ func advance_minutes(minutes: float) -> void:
 	_radiation_roll_minutes += minutes
 	while _radiation_roll_minutes >= 1440.0:
 		_radiation_roll_minutes -= 1440.0
-		if active_scenario == "" and _rng.randi_range(1, 100) == 1:
-			start_scenario("solar_flare")
+		if active_scenario == "" and _rng.randf() < 0.20:
+			start_scenario(["solar_flare", "cme_warning", "sep_event"][_rng.randi_range(0, 2)])
 	_dust_storm_roll_minutes += minutes
 	while _dust_storm_roll_minutes >= 1440.0:
 		_dust_storm_roll_minutes -= 1440.0
-		if not dust_storm_active and _rng.randi_range(1, 8) == 1:
+		if not dust_storm_active and _rng.randi_range(1, 6) == 1:
 			start_dust_storm()
 	if shield_boost_minutes > 0.0:
 		shield_boost_minutes = maxf(0.0, shield_boost_minutes - minutes)
@@ -212,6 +218,11 @@ func advance_minutes(minutes: float) -> void:
 	var habitat_transmission: float = 0.05 if shield_boost_minutes > 0.0 else habitat_radiation_transmission
 	var transmission: float = 1.0 - protected_fraction * (1.0 - habitat_transmission) if is_instance_valid(habitat) and habitat.is_inside_tree() else 1.0
 	crew_dose += radiation_level * dose_per_level_per_hour * transmission * minutes / 60.0
+	# A kid-friendly risk meter: sheltering cuts exposure, while the shield costs power.
+	if radiation_level >= 50.0 and shield_boost_minutes <= 0.0:
+		resources.apply_radiation_stress(0.9 * transmission * minutes / 60.0)
+	if crew_dose >= MAX_SAFE_DOSE:
+		clock.fail_mission("radiation")
 	var dome: Node = base.get_node_or_null("ScienceDome") if is_instance_valid(base) else null
 	if is_instance_valid(dome) and dome.is_inside_tree() and resources.life_support_powered and resources.crew_surviving:
 		research += research_points_per_hour * minutes / 60.0
@@ -234,6 +245,20 @@ func start_incident(incident: String) -> bool:
 		"oxygen_leak": resources.oxygen_leak_kg_per_hour = 0.2
 	incident_changed.emit(active_incident)
 	return true
+
+
+func _load_nasa_archive() -> void:
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(NASA_ARCHIVE_PATH))
+	if parsed is Dictionary and parsed.get("events") is Array:
+		nasa_events = parsed.get("events", [])
+
+
+func _emit_nasa_event(scenario: String) -> void:
+	for entry: Variant in nasa_events:
+		if entry is Dictionary and str(entry.get("scenario", "")) == scenario:
+			nasa_event_started.emit(entry)
+			return
+	nasa_event_started.emit({"scenario": scenario, "title": "Space-weather alert", "kid_message": "The Sun is extra busy today."})
 
 
 func repair_equipment() -> void:
