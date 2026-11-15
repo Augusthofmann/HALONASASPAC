@@ -46,7 +46,7 @@ func _ready() -> void:
 
 
 func start_task(task: String) -> bool:
-	if task not in ["clean_solar", "solar_maintenance", "collect_food", "collect_water", "collect_oxygen", "repair", "repair_science"] or state != "idle" or simulation.radiation_level >= 50.0 or clock.paused or clock.campaign_complete:
+	if task not in ["clean_solar", "solar_maintenance", "collect_food", "collect_water", "collect_oxygen", "repair", "repair_water", "repair_oxygen", "repair_science"] or state != "idle" or simulation.radiation_level >= 50.0 or clock.paused or clock.campaign_complete:
 		return false
 	var point: Node3D = _task_anchor(task)
 	if point == null:
@@ -61,9 +61,9 @@ func start_task(task: String) -> bool:
 func _task_anchor(task: String) -> Node3D:
 	if task in ["clean_solar", "solar_maintenance", "repair"]:
 		return base.get_node_or_null("SolarArraySouth")
-	if task == "collect_water":
+	if task in ["collect_water", "repair_water"]:
 		return base.get_node_or_null("WaterStorage")
-	if task == "collect_oxygen":
+	if task in ["collect_oxygen", "repair_oxygen"]:
 		return base.get_node_or_null("CargoDepot")
 	if task == "repair_science":
 		return base.get_node_or_null("ScienceDome")
@@ -143,6 +143,10 @@ func _process(delta: float) -> void:
 				"collect_water": simulation.resources.refill_water()
 				"collect_oxygen": simulation.resources.oxygen_kg = simulation.resources.oxygen_capacity_kg
 				"repair": simulation.repair_equipment()
+				"repair_water":
+					simulation.repair_water_system()
+				"repair_oxygen":
+					simulation.repair_oxygen_system()
 				"repair_science":
 					simulation.repair_equipment()
 					simulation.research += 10.0
