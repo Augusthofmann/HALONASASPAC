@@ -62,6 +62,16 @@ data/nasa_space_weather_archive.json    Offline science context
 
 ## Controls
 
+## Live demo
+
+Play the web version: [game.haloteam.my.id](https://game.haloteam.my.id)
+
+## Super Intelligence disclosure
+
+Super Intelligence tools were used for coding assistance, debugging, troubleshooting, interface text drafting, and documentation support. The HALO team directed the game design, selected the final implementation, reviewed all generated code, and integrated NASA data sources.
+
+No SI-generated images, video, audio, NASA logos, NASA flags, or NASA mission identifiers are used in this project. NASA data references are used only as cited educational context in the local offline archive.
+
 - Click the right-side action buttons to send a crew task.
 - Use the small speed buttons at the top to change simulation speed.
 - Open **Pause Menu** for save, language, credits, or a new mission.
