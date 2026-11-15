@@ -1,0 +1,38 @@
+{
+  "notice": "Archived NASA DONKI-inspired context for this offline classroom game. Event timing and gameplay values are simplified; they are not a forecast or a radiation-safety tool.",
+  "sources": [
+    {
+      "name": "NASA CCMC DONKI",
+      "url": "https://ccmc.gsfc.nasa.gov/DONKI/",
+      "use": "Solar flares, coronal mass ejections, and solar energetic particle events."
+    },
+    {
+      "name": "NASA lunar radiation background",
+      "url": "https://www.nasa.gov/wp-content/uploads/static/history/alsj/WOTM/WOTM-Radiation.html",
+      "use": "The Moon has no thick atmosphere or global magnetic field to protect astronauts."
+    }
+  ],
+  "events": [
+    {
+      "scenario": "solar_flare",
+      "date": "2024-05-14",
+      "title": "Solar flare alert",
+      "kid_message": "NASA watches flares from the Sun. Put the crew inside, or spend battery power on the shield.",
+      "choice_cost": "Shield: -0.25 kWh"
+    },
+    {
+      "scenario": "cme_warning",
+      "date": "2024-05-10",
+      "title": "Solar cloud warning",
+      "kid_message": "A cloud from the Sun may arrive soon. You have a little time to prepare the base.",
+      "choice_cost": "Shield: -0.25 kWh"
+    },
+    {
+      "scenario": "sep_event",
+      "date": "2024-05-11",
+      "title": "Fast particle alert",
+      "kid_message": "Fast particles can reach the Moon. Outside jobs stop until the alert is over.",
+      "choice_cost": "Shield: -0.25 kWh"
+    }
+  ]
+}

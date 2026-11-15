@@ -31,6 +31,10 @@ var sudoku_result: Label
 var sudoku_paused_mission: bool = false
 var kojima_progress: int = 0
 var sudoku_reward_claimed: bool = false
+var onboarding: PanelContainer
+var onboarding_elapsed: float = 0.0
+var sources_panel: PanelContainer
+var event_panel: PanelContainer
 
 const KOJIMA_CODE := [KEY_UP, KEY_UP, KEY_DOWN, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_LEFT, KEY_RIGHT, KEY_B, KEY_A]
 const SUDOKU_PUZZLE := [
@@ -77,6 +81,7 @@ func _ready() -> void:
 	simulation.incident_changed.connect(_on_incident_changed)
 	simulation.action_cooldown_changed.connect(_on_action_cooldown_changed)
 	simulation.dust_storm_changed.connect(_on_dust_storm_changed)
+	simulation.nasa_event_started.connect(_on_nasa_event_started)
 	clock.simulation_step.connect(_advance_command_queue)
 	var crew: Node = get_node_or_null("../../LunarBase/Astronaut/CrewTaskController")
 	if crew != null:
@@ -86,6 +91,7 @@ func _ready() -> void:
 	_create_mission_goals()
 	_create_resource_bars()
 	_create_sudoku_panel()
+	_create_nasa_badge()
 	_refresh_language()
 	if not clock.mission_started:
 		_create_mission_briefing()
@@ -94,6 +100,14 @@ func _ready() -> void:
 	_update_status()
 	_update_banners()
 	_update_mission_goals()
+
+
+func _process(delta: float) -> void:
+	if onboarding != null and onboarding.visible and clock.mission_started and not clock.paused:
+		onboarding_elapsed += delta
+		if onboarding_elapsed >= 10.0:
+			onboarding.queue_free()
+			onboarding = null
 
 
 func _notification(what: int) -> void:
@@ -241,6 +255,78 @@ func _create_controls() -> void:
 		speed_button.pressed.connect(func() -> void: clock.set_speed(multiplier))
 	_on_crew_updated()
 	_create_mission_menu()
+	_create_onboarding()
+
+
+func _create_nasa_badge() -> void:
+	var badge := Button.new()
+	badge.name = "NasaArchiveBadge"
+	badge.text = "NASA ARCHIVE DATA  •  ABOUT"
+	badge.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	badge.position = Vector2(-130.0, 72.0)
+	badge.custom_minimum_size = Vector2(260.0, 30.0)
+	badge.add_theme_font_override("font", comic_font)
+	badge.add_theme_font_size_override("font_size", 14)
+	badge.add_theme_color_override("font_color", Color("1b1f2e"))
+	badge.add_theme_stylebox_override("normal", _button_style(Color("fff4d6"), Color("ff7a2f")))
+	badge.tooltip_text = "Offline NASA archive: learn where the space-weather ideas come from."
+	badge.pressed.connect(_show_sources)
+	add_child(badge)
+
+
+func _create_onboarding() -> void:
+	onboarding = PanelContainer.new()
+	onboarding.name = "QuickStart"
+	onboarding.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	onboarding.offset_left = -330.0
+	onboarding.offset_top = -170.0
+	onboarding.offset_right = 330.0
+	onboarding.offset_bottom = -55.0
+	onboarding.add_theme_stylebox_override("panel", _button_style(Color("fff4d6"), Color("ff7a2f")))
+	add_child(onboarding)
+	var tip := Label.new()
+	tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tip.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	tip.add_theme_font_override("font", comic_font)
+	tip.add_theme_font_size_override("font_size", 21)
+	tip.add_theme_color_override("font_color", Color("1b1f2e"))
+	tip.text = "START HERE!  → Check the three bars.\n→ Use the buttons on the right.\nKeep power, air, and the shield safe!"
+	onboarding.add_child(tip)
+
+
+func _show_sources() -> void:
+	if sources_panel != null:
+		return
+	sources_panel = PanelContainer.new()
+	sources_panel.set_anchors_preset(Control.PRESET_CENTER)
+	sources_panel.offset_left = -370.0
+	sources_panel.offset_top = -230.0
+	sources_panel.offset_right = 370.0
+	sources_panel.offset_bottom = 230.0
+	sources_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	sources_panel.add_theme_stylebox_override("panel", _button_style(Color("fff4d6"), Color("1b1f2e")))
+	add_child(sources_panel)
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 12)
+	sources_panel.add_child(column)
+	var title := Label.new()
+	title.text = "ABOUT THE MISSION / DATA SOURCES"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_override("font", comic_font)
+	title.add_theme_font_size_override("font_size", 25)
+	title.add_theme_color_override("font_color", Color("1b1f2e"))
+	column.add_child(title)
+	var words := Label.new()
+	words.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	words.text = "The Moon has no thick air blanket, so astronauts watch the Sun carefully. NASA's DONKI archive records solar flares, solar clouds (CMEs), and fast particles (SEPs). This game uses a small offline archive inspired by those event types. The numbers are safe game numbers — not a real forecast or medical advice.\n\nBig engineering idea: shields keep people safer, but use battery power that also runs the air machine."
+	words.add_theme_font_override("font", comic_font)
+	words.add_theme_font_size_override("font_size", 18)
+	words.add_theme_color_override("font_color", Color("1b1f2e"))
+	column.add_child(words)
+	var close := _make_button("GOT IT!", Color("1b1f2e"), Color("ff7a2f"))
+	close.pressed.connect(func() -> void: sources_panel.queue_free(); sources_panel = null)
+	column.add_child(close)
 
 
 func _create_resource_bars() -> void:
@@ -251,7 +337,7 @@ func _create_resource_bars() -> void:
 	rows.add_theme_constant_override("separation", 4)
 	$ResourcesPanel.add_child(rows)
 	resource_header = $ResourcesPanel/Header
-	for entry: Array in [["power", "POWER"], ["oxygen", "O₂"], ["water", "WATER"], ["food", "FOOD"]]:
+	for entry: Array in [["power", "⚡ POWER"], ["oxygen", "◉ LIFE SUPPORT"], ["shield", "☢ SHIELD"]]:
 		var row := HBoxContainer.new()
 		row.custom_minimum_size = Vector2(0.0, 24.0)
 		rows.add_child(row)
@@ -657,7 +743,9 @@ func _on_demo_message(message: String) -> void:
 	status.text = message
 
 
-func _on_campaign_finished(success: bool) -> void:
+func _on_campaign_finished(success: bool, reason: String) -> void:
+	if get_node_or_null("CampaignResult") != null:
+		return
 	var layer := PanelContainer.new()
 	layer.name = "CampaignResult"
 	layer.set_anchors_preset(Control.PRESET_CENTER)
@@ -671,17 +759,69 @@ func _on_campaign_finished(success: bool) -> void:
 	var title := Label.new()
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 28)
-	title.text = "MISSION COMPLETE" if success else "MISSION ENDED"
+	title.text = "MISSION COMPLETE!" if success else "MISSION ENDED"
 	column.add_child(title)
 	var result := Label.new()
 	result.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	result.text = "The crew completed 30 days!" if success else "The crew ran out of essential supplies."
+	var endings: Dictionary = {
+		"life_support": "The crew needed air, water, or food. Next time, protect life support first!",
+		"radiation": "Too much radiation reached the crew. Shelter early or spend power on the shield!",
+		"mission_complete": "You balanced the base for 30 days. Great mission planning!"
+	}
+	result.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	result.text = str(endings.get(reason, "The crew needs another try."))
 	column.add_child(result)
 	var restart := Button.new()
 	restart.name = "Restart"
 	restart.text = "RESTART MISSION"
-	restart.pressed.connect(func() -> void: clock.new_mission())
+	restart.text = "PLAY AGAIN"
+	restart.pressed.connect(func() -> void: clock.new_mission(true))
 	column.add_child(restart)
+
+
+func _on_nasa_event_started(event: Dictionary) -> void:
+	if event_panel != null:
+		event_panel.queue_free()
+	event_panel = PanelContainer.new()
+	event_panel.name = "SpaceWeatherChoice"
+	event_panel.set_anchors_preset(Control.PRESET_CENTER)
+	event_panel.offset_left = -310.0
+	event_panel.offset_top = -190.0
+	event_panel.offset_right = 310.0
+	event_panel.offset_bottom = 190.0
+	event_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	event_panel.add_theme_stylebox_override("panel", _button_style(Color("fff4d6"), Color("ff7a2f")))
+	add_child(event_panel)
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 12)
+	event_panel.add_child(column)
+	var title := Label.new()
+	title.text = "☀ " + str(event.get("title", "SPACE-WEATHER ALERT"))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_override("font", comic_font)
+	title.add_theme_font_size_override("font_size", 26)
+	title.add_theme_color_override("font_color", Color("1b1f2e"))
+	column.add_child(title)
+	var copy := Label.new()
+	copy.text = str(event.get("kid_message", "The Sun is extra busy today.")) + "\n\nTrade-off: " + str(event.get("choice_cost", "Shield uses battery power."))
+	copy.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	copy.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	copy.add_theme_font_override("font", comic_font)
+	copy.add_theme_font_size_override("font_size", 19)
+	copy.add_theme_color_override("font_color", Color("1b1f2e"))
+	column.add_child(copy)
+	var shield := _make_button("USE SHIELD  (-0.25 kWh)", Color("3d4b3b"), Color("ff7a2f"))
+	shield.pressed.connect(func() -> void:
+		if simulation.activate_emergency_shield():
+			status.text = "Shield is on. Battery is lower, but the crew is safer!"
+		else:
+			status.text = "Not enough battery for the shield. Keep the crew inside!"
+		event_panel.queue_free(); event_panel = null
+	)
+	column.add_child(shield)
+	var save_power := _make_button("SAVE POWER — STAY INSIDE", Color("1b1f2e"), Color("ff7a2f"))
+	save_power.pressed.connect(func() -> void: event_panel.queue_free(); event_panel = null)
+	column.add_child(save_power)
 
 
 func _input(event: InputEvent) -> void:
@@ -777,6 +917,15 @@ func _on_incident_changed(_incident: String) -> void:
 func _on_dust_storm_changed(_active: bool) -> void:
 	_update_banners()
 	_update_status()
+	if _active:
+		_shake_for_storm()
+
+
+func _shake_for_storm() -> void:
+	var home := position
+	var shake := create_tween()
+	for offset in [Vector2(9, -5), Vector2(-10, 6), Vector2(6, 4), Vector2(-4, -3), Vector2.ZERO]:
+		shake.tween_property(self, "position", home + offset, 0.07)
 
 
 func _on_action_cooldown_changed(_action: String, remaining_minutes: float) -> void:
@@ -810,8 +959,8 @@ func _update_resources() -> void:
 		return
 	_update_resource_row("power", resources.energy_kwh, resources.energy_capacity_kwh, "%.1f kWh" % resources.energy_kwh)
 	_update_resource_row("oxygen", resources.oxygen_kg, resources.oxygen_capacity_kg, "%.1f kg" % resources.oxygen_kg)
-	_update_resource_row("water", resources.water_kg, resources.water_capacity_kg, "%.1f kg" % resources.water_kg)
-	_update_resource_row("food", resources.food_kg, 2.0, "%.1f kg" % resources.food_kg)
+	var shield: float = clampf(100.0 - simulation.crew_dose / simulation.MAX_SAFE_DOSE * 100.0, 0.0, 100.0)
+	_update_resource_row("shield", shield, 100.0, "%d%%" % roundi(shield))
 
 
 func _update_resource_row(key: String, amount: float, capacity: float, text: String) -> void:
@@ -820,6 +969,8 @@ func _update_resource_row(key: String, amount: float, capacity: float, text: Str
 	var value: Label = row["value"]
 	bar.value = clampf(amount / maxf(capacity, 0.01) * 100.0, 0.0, 100.0)
 	value.text = text
+	var critical := bar.value < 25.0
+	bar.modulate = Color("ff6b57") if critical else Color.WHITE
 
 
 func _update_banners() -> void:

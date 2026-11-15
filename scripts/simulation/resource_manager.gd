@@ -6,6 +6,7 @@ signal resources_changed(energy_kwh: float, oxygen_kg: float, water_kg: float, f
 signal life_support_changed(powered: bool)
 signal crew_survival_changed(surviving: bool)
 signal crew_health_changed(health: float)
+signal resource_critical(resource: String)
 
 @export_group("Storage")
 @export var energy_capacity_kwh: float = 2.0
@@ -71,6 +72,10 @@ func advance_minutes(minutes: float) -> void:
 	water_kg = clampf(water_kg + reclaimed - (water_use_kg_per_hour * (1.0 - recycled) + water_leak_kg_per_hour) * hours, 0.0, water_capacity_kg)
 	food_kg = maxf(0.0, food_kg - food_use_kg_per_hour * hours)
 	var essentials_missing: bool = oxygen_kg <= 0.0 or water_kg <= 0.0 or food_kg <= 0.0
+	if energy_kwh <= 0.05:
+		resource_critical.emit("energy")
+	if oxygen_kg <= 0.15:
+		resource_critical.emit("oxygen")
 	var previous_health: float = crew_health
 	# A missing essential does not instantly erase the crew: their health falls
 	# over time, giving the player a chance to fix the base.
@@ -85,6 +90,18 @@ func advance_minutes(minutes: float) -> void:
 		crew_surviving = surviving
 		crew_survival_changed.emit(surviving)
 	resources_changed.emit(energy_kwh, oxygen_kg, water_kg, food_kg)
+
+
+func apply_radiation_stress(amount: float) -> void:
+	if amount <= 0.0 or not crew_surviving:
+		return
+	var previous_health := crew_health
+	crew_health = maxf(0.0, crew_health - amount)
+	if not is_equal_approx(previous_health, crew_health):
+		crew_health_changed.emit(crew_health)
+	if crew_health <= 0.0:
+		crew_surviving = false
+		crew_survival_changed.emit(false)
 
 
 func refill_water() -> void:

@@ -1,20 +1,69 @@
-# Junior Astronaut Mission Trainer — Beta 0.2
+# Junior Astronaut Mission Trainer
 
-A short, playable lunar-outpost management demo made with Godot 4. The goal is to keep a small Moon base powered, supplied, and safe through a 30-day mission.
+An offline, browser-ready Godot 4 learning game for the NASA Space Apps Challenge **Junior Astronaut Mission Trainer** challenge. It is made for explorers aged 7–12.
 
-## Play loop
+## The mission
 
-- Start or continue from the mission briefing; progress auto-saves every 12 seconds and when the game is paused.
-- Use **SOLAR SERVICE** to clean and repair `SolarArraySouth` with one crew action.
-- **WATER**, **O₂**, **FOOD +1**, and **SCIENCE** deploy workers at `WaterStorage`, `CargoDepot`, `HydroponicsFarm`, and `ScienceDome`; powered life support automatically recovers water and oxygen.
-- Use **RADIATION** to trigger a solar-flare drill and verify shelter behavior.
-- Watch radiation alerts, repair faults, and launch rover expeditions for research.
-- Survive all 30 mission days to complete the mission.
+Keep a small lunar outpost going for 30 mission days. The player makes quick engineering choices instead of answering a quiz:
+
+- **Power** runs the base and the life-support machine.
+- **Life support** means oxygen, water, food, and a healthy crew.
+- **Radiation shield** helps during solar events, but spending battery power on it can leave less power for oxygen.
+
+Dust can cover solar panels. A leak can waste water or oxygen. Solar events send the crew inside. The goal is not to pick a magic button: it is to notice what each choice costs.
+
+## Features
+
+- Complete loop: new mission → real-time decisions → win/lose explanation → immediate restart.
+- Random solar alerts, dust storms, power faults, water leaks, and oxygen leaks.
+- Per-action cooldowns and delayed crew commands to prevent score farming.
+- Automatic save/load, pause menu, English/Russian interface, and a short first-play onboarding.
+- Large resource bars with critical-state color feedback and a storm shake.
+- Offline NASA archive badge and an in-game **About the Mission / Data Sources** panel.
+- Konami-code Sudoku easter egg.
 
 ## Run locally
 
-Open `project.godot` with Godot 4.7, then run the main scene (`F6`). The Windows export preset writes to `build/JuniorAstronautMissionTrainer-Beta-0.2.exe` once exported from a Godot editor with Windows export templates installed.
+1. Install **Godot 4.7**.
+2. Import `project.godot` in Godot.
+3. Press **F6** to run the main scene, or **F5** to run the project.
+4. Choose **New Game**.
 
-## Beta notes
+The project uses the Compatibility renderer, so it is suitable for Web export.
 
-This beta focuses on a polished playable loop rather than final content: crew work is intentionally staged at visible task locations, the mission is single-player, and all space-weather values are fictional gameplay data.
+## Export for the web
+
+1. In Godot, install export templates: **Editor → Manage Export Templates**.
+2. Open **Project → Export**, choose the `Web` preset, and export to `build/web/index.html`.
+3. Upload all generated files in `build/web/` to the web server directory. The server must serve `.wasm` as `application/wasm`.
+
+## NASA data and science note
+
+The game deliberately uses the local file [`data/nasa_space_weather_archive.json`](data/nasa_space_weather_archive.json), not a live API. This makes classroom/web play reliable and avoids presenting live weather as a safety warning.
+
+The archive is a child-friendly, offline adaptation of event *types* from these NASA sources:
+
+- [NASA CCMC DONKI](https://ccmc.gsfc.nasa.gov/DONKI/) — solar flares (FLR), coronal mass ejections (CME), and solar energetic particles (SEP).
+- [NASA Apollo lunar-radiation learning resource](https://www.nasa.gov/wp-content/uploads/static/history/alsj/WOTM/WOTM-Radiation.html) — why the Moon has less natural shielding than Earth.
+- [NASA Open APIs: DONKI](https://api.nasa.gov/) — API documentation for the underlying event catalogue.
+
+Dates and event labels in the local file provide context only. The mission timers, resource quantities, risk meter, and win/lose thresholds are intentionally simplified gameplay values. They are **not** a real-time forecast, a radiation calculation, or medical advice.
+
+## Project layout
+
+```text
+scenes/main/main.tscn              Main 3D scene and HUD anchors
+scripts/core/game_manager.gd       Clock, save/load, mission state, ending
+scripts/simulation/resource_manager.gd  Power, life support, crew health
+scripts/simulation/base_simulation.gd   Events, radiation, base actions
+scripts/ui/hud.gd                  Kid-friendly interface, menus, onboarding
+data/nasa_space_weather_archive.json    Offline science context
+```
+
+## Controls
+
+- Click the right-side action buttons to send a crew task.
+- Use the small speed buttons at the top to change simulation speed.
+- Open **Pause Menu** for save, language, credits, or a new mission.
+- Press `C` to request solar-panel service.
+- The Konami code `↑ ↑ ↓ ↓ ← → ← → B A` opens the optional Sudoku puzzle.

@@ -19,7 +19,7 @@ func _check() -> void:
 	var animation: AnimationPlayer = base.get_node("Astronaut/Model/AnimationPlayer")
 	assert(animation.has_animation("Idle_A") and animation.has_animation("Walking_A"))
 	assert(is_equal_approx(resources.solar_generation_kw, 0.6))
-	assert(sim._solar_overlays.size() > 0 and hud.get_node("ResourcesPanel/Readout").text.contains("SUN 60%"))
+	assert(sim._solar_overlays.size() > 0 and hud.resource_rows.has("shield"))
 	assert(crew.start_task("clean_solar") and crew.state == "working")
 	assert(animation.current_animation == "Idle_A")
 	var initial_position: Vector3 = base.get_node("Astronaut").global_position
@@ -29,7 +29,7 @@ func _check() -> void:
 	clock.set_paused(false)
 	crew._process(5.0)
 	assert(crew.state == "idle" and is_equal_approx(resources.solar_generation_kw, 1.0))
-	assert(sim._solar_overlays.is_empty() and hud.get_node("ResourcesPanel/Readout").text.contains("SUN 100%"))
+	assert(sim._solar_overlays.is_empty() and hud.resource_rows["power"]["bar"].value > 0.0)
 	crew._process(30.0)
 	assert(crew.state == "idle")
 	assert(crew.start_task("clean_solar"))
