@@ -22,6 +22,13 @@ mono_crash.*.json
 
 # Export outputs
 *.exe
+build/
+.tools/
+
+# Temporary deploy credentials and host verification data.
+.deploy_key
+.deploy_key.pub
+.deploy_known_hosts
 
 # Uncomment if PCK files are not needed in Git
 # *.pck

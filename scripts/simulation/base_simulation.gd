@@ -6,6 +6,8 @@ signal solar_cleaned(efficiency: float)
 signal crew_updated
 signal incident_changed(incident: String)
 signal radiation_hazard_changed(active: bool)
+signal action_cooldown_changed(action: String, remaining_minutes: float)
+signal dust_storm_changed(active: bool)
 
 @export var base: Node
 @export var clock: Node
@@ -40,6 +42,12 @@ var _incident_timer_minutes: float = 0.0
 var _next_incident_minutes: float = 720.0
 var _rng := RandomNumberGenerator.new()
 var _radiation_hazard: bool = false
+const ACTION_COOLDOWN_MINUTES: float = 60.0
+var action_cooldowns: Dictionary = {}
+var _radiation_roll_minutes: float = 0.0
+var _dust_storm_roll_minutes: float = 0.0
+var dust_storm_active: bool = false
+var shield_boost_minutes: float = 0.0
 
 
 func _ready() -> void:
@@ -66,7 +74,10 @@ func _ready() -> void:
 			actor.add_child(controller)
 			crew.append(controller)
 			controller.state_changed.connect(func(_state: String) -> void: crew_updated.emit())
-			controller.task_finished.connect(func(_task: String) -> void: crew_updated.emit())
+			controller.task_finished.connect(func(task: String) -> void:
+				crew_updated.emit()
+				clock.add_score(_task_points(task))
+			)
 
 
 func _create_terrain_collider() -> void:
@@ -89,6 +100,7 @@ func _process(delta: float) -> void:
 	rover_remaining = maxf(0.0, rover_remaining - delta * clock.speed)
 	if rover_remaining <= 0.0:
 		research += 200.0
+		clock.add_score(200)
 		rover_crew.finish_expedition()
 		rover_crew = null
 		_set_rover_gray(false)
@@ -97,18 +109,22 @@ func _process(delta: float) -> void:
 
 
 func assign_task(task: String) -> bool:
+	if action_cooldown_remaining(task) > 0.0:
+		return false
 	for member: Node in crew:
 		if member.start_task(task):
+			_start_action_cooldown(task)
 			crew_updated.emit()
 			return true
 	return false
 
 
 func start_rover() -> bool:
-	if rover_crew != null or radiation_level >= 50.0 or clock.paused or clock.campaign_complete or base.get_node_or_null("Rover") == null:
+	if action_cooldown_remaining("rover") > 0.0 or rover_crew != null or radiation_level >= 50.0 or clock.paused or clock.campaign_complete or base.get_node_or_null("Rover") == null:
 		return false
 	for member: Node in crew:
 		if member.start_expedition():
+			_start_action_cooldown("rover")
 			rover_crew = member
 			rover_remaining = 300.0
 			_set_rover_gray(true)
@@ -161,6 +177,24 @@ func start_scenario(scenario: String) -> bool:
 func advance_minutes(minutes: float) -> void:
 	if minutes <= 0.0:
 		return
+	for action: String in action_cooldowns.keys():
+		var remaining: float = maxf(0.0, float(action_cooldowns[action]) - minutes)
+		action_cooldowns[action] = remaining
+		if remaining <= 0.0:
+			action_cooldowns.erase(action)
+		action_cooldown_changed.emit(action, remaining)
+	_radiation_roll_minutes += minutes
+	while _radiation_roll_minutes >= 1440.0:
+		_radiation_roll_minutes -= 1440.0
+		if active_scenario == "" and _rng.randi_range(1, 100) == 1:
+			start_scenario("solar_flare")
+	_dust_storm_roll_minutes += minutes
+	while _dust_storm_roll_minutes >= 1440.0:
+		_dust_storm_roll_minutes -= 1440.0
+		if not dust_storm_active and _rng.randi_range(1, 8) == 1:
+			start_dust_storm()
+	if shield_boost_minutes > 0.0:
+		shield_boost_minutes = maxf(0.0, shield_boost_minutes - minutes)
 	if active_incident == "":
 		_incident_timer_minutes += minutes
 		if _incident_timer_minutes >= _next_incident_minutes:
@@ -175,7 +209,8 @@ func advance_minutes(minutes: float) -> void:
 			protected_count += 1
 	protected_mode = crew.size() > 0 and protected_count == crew.size()
 	var protected_fraction: float = float(protected_count) / float(crew.size()) if crew.size() > 0 else (1.0 if protected_mode else 0.0)
-	var transmission: float = 1.0 - protected_fraction * (1.0 - habitat_radiation_transmission) if is_instance_valid(habitat) and habitat.is_inside_tree() else 1.0
+	var habitat_transmission: float = 0.05 if shield_boost_minutes > 0.0 else habitat_radiation_transmission
+	var transmission: float = 1.0 - protected_fraction * (1.0 - habitat_transmission) if is_instance_valid(habitat) and habitat.is_inside_tree() else 1.0
 	crew_dose += radiation_level * dose_per_level_per_hour * transmission * minutes / 60.0
 	var dome: Node = base.get_node_or_null("ScienceDome") if is_instance_valid(base) else null
 	if is_instance_valid(dome) and dome.is_inside_tree() and resources.life_support_powered and resources.crew_surviving:
@@ -211,6 +246,41 @@ func repair_equipment() -> void:
 	incident_changed.emit(active_incident)
 
 
+func repair_water_system() -> void:
+	resources.refill_water()
+	resources.water_leak_kg_per_hour = 0.0
+	if active_incident == "water_leak":
+		active_incident = ""
+		incident_changed.emit(active_incident)
+
+
+func repair_oxygen_system() -> void:
+	resources.oxygen_kg = resources.oxygen_capacity_kg
+	resources.oxygen_leak_kg_per_hour = 0.0
+	if active_incident == "oxygen_leak":
+		active_incident = ""
+		incident_changed.emit(active_incident)
+
+
+func _task_points(task: String) -> int:
+	var points: Dictionary = {
+		"clean_solar": 100, "solar_maintenance": 100,
+		"collect_water": 50, "collect_oxygen": 50, "collect_food": 50,
+		"repair_water": 75, "repair_oxygen": 75,
+		"repair": 75, "repair_science": 100,
+	}
+	return int(points.get(task, 25))
+
+
+func action_cooldown_remaining(action: String) -> float:
+	return float(action_cooldowns.get(action, 0.0))
+
+
+func _start_action_cooldown(action: String) -> void:
+	action_cooldowns[action] = ACTION_COOLDOWN_MINUTES
+	action_cooldown_changed.emit(action, ACTION_COOLDOWN_MINUTES)
+
+
 func _refresh_power() -> void:
 	var count: int = 0
 	if is_instance_valid(base):
@@ -222,9 +292,29 @@ func _refresh_power() -> void:
 
 func clean_solar() -> void:
 	solar_efficiency = clampf(solar_cleaned_efficiency, 0.0, 1.0)
+	dust_storm_active = false
 	_refresh_power()
 	_set_solar_dust(false)
 	solar_cleaned.emit(solar_efficiency)
+	dust_storm_changed.emit(false)
+
+
+func start_dust_storm() -> void:
+	dust_storm_active = true
+	solar_efficiency = minf(solar_efficiency, 0.35)
+	_refresh_power()
+	_set_solar_dust(true)
+	dust_storm_changed.emit(true)
+	conditions_changed.emit(radiation_level, crew_dose, research)
+
+
+func activate_emergency_shield() -> bool:
+	if radiation_level < 50.0 or resources.energy_kwh < 0.25 or shield_boost_minutes > 0.0:
+		return false
+	resources.energy_kwh -= 0.25
+	shield_boost_minutes = 90.0
+	conditions_changed.emit(radiation_level, crew_dose, research)
+	return true
 
 
 func _set_solar_dust(dirty: bool) -> void:
